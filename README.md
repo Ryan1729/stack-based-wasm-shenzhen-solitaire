@@ -1,3 +1,9 @@
+# Stack-based WASM Shenzhen solitaire
+
+This is a fork of [my own non-stack-based version of the same game](https://github.com/Ryan1729/wasm_shenzhen_solitaire). You are most likely to be more interested in the other one since this one exists just for my own practice at expressing solitaire games in a stack-based style since I plan to do so in another project.
+
+What follows is the README for the version linked above, so the playable version link is for that version. Note though the licensing that the license applies to both versions.
+
 # WASM Shenzhen solitaire
 
 This is a port of [Hunter X](https://www.lexaloffle.com/bbs/?uid=26640)'s [pico-8 version](https://www.lexaloffle.com/bbs/?pid=46634&tid=30310) of [Zachtronic](https://www.zachtronics.com)'s [Shenzhen Solitaire](http://store.steampowered.com/app/570490/SHENZHEN_SOLITAIRE/).
