@@ -8,6 +8,9 @@ pub use inner_common::*;
 pub mod game_state;
 pub use game_state::*;
 
+pub mod vm;
+pub use vm::*;
+
 pub struct State {
     pub game_state: GameState,
     pub framebuffer: Framebuffer,

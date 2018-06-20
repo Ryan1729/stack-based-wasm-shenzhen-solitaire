@@ -6,6 +6,8 @@ use stdweb::web::Date;
 
 use inner_common::*;
 
+use vm::VM;
+
 impl GameState {
     pub fn new() -> GameState {
         let mut cells: [Vec<u8>; 16] = Default::default();
@@ -62,6 +64,7 @@ impl GameState {
             grabpos: 1,
             grabdepth: 0,
             movetimer: 0,
+            vm: VM::default(),
         }
     }
 }

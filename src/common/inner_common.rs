@@ -40,6 +40,8 @@ pub const CARD_BACK: u8 = 31;
 
 pub type Cells = [Vec<u8>; CELLS_MAX_INDEX as usize + 1];
 
+use vm::VM;
+
 pub struct GameState {
     pub cells: Cells,
     pub wins: u8,
@@ -50,6 +52,7 @@ pub struct GameState {
     pub grabpos: u8,
     pub grabdepth: u8,
     pub movetimer: u8,
+    pub vm: VM,
 }
 
 pub const GFX_WIDTH: usize = 128;

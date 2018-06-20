@@ -1,3 +1,4 @@
+use bytecode::instructions::*;
 use common::*;
 
 use std::cmp::{max, min};
@@ -112,7 +113,7 @@ fn update(state: &mut GameState, input: Input) {
                     }
                 }
             } else if input.pressed_this_frame(Button::B) {
-                state.selectdrop = false;
+                state.interpret(&[DROP]);
             }
         }
     }

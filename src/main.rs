@@ -23,6 +23,8 @@ use common::*;
 mod game;
 use game::update_and_render;
 
+mod bytecode;
+
 macro_rules! enclose {
     ( [$( $x:ident ),*] $y:expr ) => {
         {
