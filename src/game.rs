@@ -33,7 +33,7 @@ fn update(state: &mut GameState, input: Input) {
 
     if state.movetimer == 0 {
         if automove(state) {
-            state.movetimer = MOVE_TIMER_MAX;
+            state.interpret(&[FILL_MOVE_TIMER]);
         } else {
             if input.pressed_this_frame(Button::Left) {
                 state.selectpos = if state.selectpos == 0 {
@@ -105,8 +105,7 @@ fn update(state: &mut GameState, input: Input) {
                 if state.selectpos == BUTTON_COLUMN {
                     if canmovedragons(state, state.selectdepth) {
                         movedragons(state);
-                        state.selectdrop = false;
-                        state.movetimer = MOVE_TIMER_MAX;
+                        state.interpret(&[DROP, FILL_MOVE_TIMER]);
                     }
                 } else {
                     if state.selectdrop {
@@ -120,8 +119,7 @@ fn update(state: &mut GameState, input: Input) {
                             let grabdepth = state.grabdepth;
                             let selectpos = state.selectpos;
                             movecards(state, grabpos, grabdepth, selectpos);
-                            state.selectdrop = false;
-                            state.movetimer = MOVE_TIMER_MAX;
+                            state.interpret(&[DROP, FILL_MOVE_TIMER]);
                         }
                     } else if cangrab(&state.cells, state.selectpos, state.selectdepth) {
                         state.interpret(&[GET_SELECT_COORDS, SET_GRAB_COORDS, GRAB]);

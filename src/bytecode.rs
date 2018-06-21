@@ -1,4 +1,4 @@
-use common::GameState;
+use common::{GameState, MOVE_TIMER_MAX};
 
 pub mod instructions {
     pub const NO_OP: u8 = 0;
@@ -13,6 +13,8 @@ pub mod instructions {
     pub const SET_SELECT_COORDS: u8 = GET_SELECT_COORDS | SET;
     pub const GET_GRAB_COORDS: u8 = GET_SELECT_COORDS | GRAB_COORDS;
     pub const SET_GRAB_COORDS: u8 = GET_SELECT_COORDS | SET | GRAB_COORDS;
+
+    pub const FILL_MOVE_TIMER: u8 = 0b1100_0011;
 
 }
 pub use self::instructions::*;
@@ -59,6 +61,9 @@ impl GameState {
             SET_GRAB_COORDS => {
                 self.grabpos = self.vm.pop();
                 self.grabdepth = self.vm.pop();
+            }
+            FILL_MOVE_TIMER => {
+                self.movetimer = MOVE_TIMER_MAX;
             }
             _ => unimplemented!(),
         }
