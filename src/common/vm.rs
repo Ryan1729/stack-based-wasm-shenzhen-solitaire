@@ -17,7 +17,7 @@ impl Default for VM {
 impl VM {
     pub const STACK_SIZE: usize = 128;
 
-    fn pop(&mut self) -> u8 {
+    pub fn pop(&mut self) -> u8 {
         let output = self.stack[self.stack_pointer];
 
         self.stack_pointer = self.stack_pointer.saturating_sub(1);
@@ -25,7 +25,7 @@ impl VM {
         return output;
     }
 
-    fn push(&mut self, byte: u8) {
+    pub fn push(&mut self, byte: u8) {
         self.stack_pointer += 1;
 
         self.stack[self.stack_pointer] = byte;

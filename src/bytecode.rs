@@ -1,7 +1,19 @@
 use common::GameState;
 
 pub mod instructions {
-    pub const DROP: u8 = 63;
+    pub const NO_OP: u8 = 0;
+
+    pub const GRAB: u8 = 0b10;
+    pub const DROP: u8 = GRAB | 1;
+
+    const SET: u8 = 0b010;
+    const GRAB_COORDS: u8 = 0b100;
+
+    pub const GET_SELECT_COORDS: u8 = 0b0100_0000;
+    pub const SET_SELECT_COORDS: u8 = GET_SELECT_COORDS | SET;
+    pub const GET_GRAB_COORDS: u8 = GET_SELECT_COORDS | GRAB_COORDS;
+    pub const SET_GRAB_COORDS: u8 = GET_SELECT_COORDS | SET | GRAB_COORDS;
+
 }
 pub use self::instructions::*;
 
@@ -26,8 +38,27 @@ impl GameState {
         instruction: u8,
     ) {
         match instruction {
+            GRAB => {
+                self.selectdrop = true;
+            }
             DROP => {
                 self.selectdrop = false;
+            }
+            GET_SELECT_COORDS => {
+                self.vm.push(self.selectdepth);
+                self.vm.push(self.selectpos);
+            }
+            GET_GRAB_COORDS => {
+                self.vm.push(self.grabdepth);
+                self.vm.push(self.grabpos);
+            }
+            SET_SELECT_COORDS => {
+                self.selectpos = self.vm.pop();
+                self.selectdepth = self.vm.pop();
+            }
+            SET_GRAB_COORDS => {
+                self.grabpos = self.vm.pop();
+                self.grabdepth = self.vm.pop();
             }
             _ => unimplemented!(),
         }

@@ -124,9 +124,7 @@ fn update(state: &mut GameState, input: Input) {
                             state.movetimer = MOVE_TIMER_MAX;
                         }
                     } else if cangrab(&state.cells, state.selectpos, state.selectdepth) {
-                        state.grabpos = state.selectpos;
-                        state.grabdepth = state.selectdepth;
-                        state.selectdrop = true;
+                        state.interpret(&[GET_SELECT_COORDS, SET_GRAB_COORDS, GRAB]);
                     }
                 }
             } else if input.pressed_this_frame(Button::B) {
