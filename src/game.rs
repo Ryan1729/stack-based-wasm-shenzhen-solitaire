@@ -81,7 +81,7 @@ fn update(state: &mut GameState, input: Input) {
                     };
                     state.selectdepth = 0;
                 } else {
-                    state.selectdepth += 1;
+                    state.interpret(&[GET_SELECT_DEPTH, LITERAL, 1, ADD, SET_SELECT_DEPTH]);
                 }
             } else if input.pressed_this_frame(Button::Down) {
                 if state.selectdepth == 0 {
@@ -99,7 +99,7 @@ fn update(state: &mut GameState, input: Input) {
                         0
                     };
                 } else {
-                    state.selectdepth = state.selectdepth - 1;
+                    state.interpret(&[LITERAL, 1, GET_SELECT_DEPTH, SUB, SET_SELECT_DEPTH]);
                 }
             } else if input.pressed_this_frame(Button::A) {
                 if state.selectpos == BUTTON_COLUMN {
@@ -122,7 +122,13 @@ fn update(state: &mut GameState, input: Input) {
                             state.interpret(&[DROP, FILL_MOVE_TIMER]);
                         }
                     } else if cangrab(&state.cells, state.selectpos, state.selectdepth) {
-                        state.interpret(&[GET_SELECT_COORDS, SET_GRAB_COORDS, GRAB]);
+                        state.interpret(&[
+                            GET_SELECT_POS,
+                            SET_GRAB_POS,
+                            GET_SELECT_DEPTH,
+                            SET_GRAB_DEPTH,
+                            GRAB,
+                        ]);
                     }
                 }
             } else if input.pressed_this_frame(Button::B) {
