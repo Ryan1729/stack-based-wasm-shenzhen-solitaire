@@ -74,12 +74,25 @@ fn update(state: &mut GameState, input: Input) {
                 };
 
                 if changepos {
-                    state.selectpos = if state.selectpos > END_OF_FOUNDATIONS {
-                        state.selectpos - START_OF_TABLEAU
-                    } else {
-                        state.selectpos + START_OF_TABLEAU
-                    };
-                    state.selectdepth = 0;
+                    state.interpret(&[
+                        GET_SELECT_POS,
+                        LITERAL,
+                        START_OF_TABLEAU,
+                        GET_SELECT_POS,
+                        LITERAL,
+                        END_OF_FOUNDATIONS,
+                        GT_BRANCH,
+                        3,
+                        ADD,
+                        JUMP,
+                        1,
+                        SUB,
+                        SET_SELECT_POS,
+                        //empty stack
+                        LITERAL,
+                        0,
+                        SET_SELECT_DEPTH,
+                    ]);
                 } else {
                     state.interpret(&[GET_SELECT_DEPTH, LITERAL, 1, ADD, SET_SELECT_DEPTH]);
                 }
@@ -99,7 +112,7 @@ fn update(state: &mut GameState, input: Input) {
                         0
                     };
                 } else {
-                    state.interpret(&[LITERAL, 1, GET_SELECT_DEPTH, SUB, SET_SELECT_DEPTH]);
+                    state.interpret(&[GET_SELECT_DEPTH, LITERAL, 1, SUB, SET_SELECT_DEPTH]);
                 }
             } else if input.pressed_this_frame(Button::A) {
                 if state.selectpos == BUTTON_COLUMN {

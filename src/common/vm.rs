@@ -5,6 +5,25 @@ pub struct VM {
     stack: [u8; VM::STACK_SIZE],
 }
 
+use std::fmt;
+
+impl fmt::Display for VM {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[")?;
+
+        let mut sep = "";
+        //don't show the unused byte at the start
+        for i in 1..=self.stack_pointer {
+            let elem = self.stack[i];
+
+            write!(f, "{}{}", sep, elem)?;
+            sep = ", ";
+        }
+
+        write!(f, "]")
+    }
+}
+
 impl Default for VM {
     fn default() -> Self {
         VM {
