@@ -43,13 +43,25 @@ fn update(state: &mut GameState, input: Input) {
                 } else {
                     state.selectpos - 1
                 };
-                state.selectdepth = if state.selectdrop {
-                    0
-                } else {
-                    let len = state.cells[state.selectpos as usize].len() as u8;
-
-                    min(max(0, state.selectdepth), len - 1)
-                };
+                state.interpret(&[
+                    GET_SELECT_DROP,
+                    IF,
+                    11,
+                    GET_CELL_LEN,
+                    LITERAL,
+                    1,
+                    SUB,
+                    GET_SELECT_DEPTH,
+                    LITERAL,
+                    0,
+                    MAX,
+                    MIN,
+                    JUMP,
+                    2,
+                    LITERAL,
+                    0,
+                    SET_SELECT_DEPTH,
+                ]);
             } else if input.pressed_this_frame(Button::Right) {
                 state.selectpos = if state.selectpos == START_OF_TABLEAU - 1 {
                     0
@@ -58,13 +70,26 @@ fn update(state: &mut GameState, input: Input) {
                 } else {
                     state.selectpos + 1
                 };
-                state.selectdepth = if state.selectdrop {
-                    0
-                } else {
-                    let len = state.cells[state.selectpos as usize].len() as u8;
 
-                    min(max(0, state.selectdepth), len - 1)
-                };
+                state.interpret(&[
+                    GET_SELECT_DROP,
+                    IF,
+                    11,
+                    GET_CELL_LEN,
+                    LITERAL,
+                    1,
+                    SUB,
+                    GET_SELECT_DEPTH,
+                    LITERAL,
+                    0,
+                    MAX,
+                    MIN,
+                    JUMP,
+                    2,
+                    LITERAL,
+                    0,
+                    SET_SELECT_DEPTH,
+                ]);
             } else if input.pressed_this_frame(Button::Up) {
                 let changepos = if state.selectpos == BUTTON_COLUMN {
                     state.selectdepth >= 2

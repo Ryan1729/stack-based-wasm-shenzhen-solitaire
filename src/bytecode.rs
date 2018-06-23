@@ -3,6 +3,8 @@ use common::{GameState, MOVE_TIMER_MAX};
 pub mod instructions {
     pub const NO_OP: u8 = 0;
 
+    pub const FILL_MOVE_TIMER: u8 = 1;
+
     pub const GRAB: u8 = 0b10;
     pub const DROP: u8 = GRAB | 1;
 
@@ -11,13 +13,21 @@ pub mod instructions {
     pub const MUL: u8 = ADD | 0b10;
     pub const DIV: u8 = ADD | 0b11;
 
+    pub const MAX: u8 = 0b1001;
+    pub const MIN: u8 = MAX | 0b10;
+
+    pub const AND: u8 = 0b1000;
+    pub const OR: u8 = 0b1110;
+    pub const NOT: u8 = 0b1111;
+
     const EQ: u8 = 0b001;
     const GT: u8 = 0b010;
     const LT: u8 = 0b100;
     const BRANCH: u8 = 0b1001_0000;
 
-    pub const NE_BRANCH: u8 = BRANCH;
-    pub const EQ_BRANCH: u8 = NE_BRANCH | EQ;
+    pub const IF: u8 = BRANCH;
+    pub const EQ_BRANCH: u8 = BRANCH | EQ;
+    pub const NE_BRANCH: u8 = BRANCH | GT | LT;
     pub const GT_BRANCH: u8 = BRANCH | GT;
     pub const GE_BRANCH: u8 = GT_BRANCH | EQ;
     pub const LT_BRANCH: u8 = BRANCH | LT;
@@ -41,8 +51,8 @@ pub mod instructions {
     pub const LITERAL: u8 = 0b101010;
     pub const FORGET: u8 = LITERAL | 1;
 
-    pub const FILL_MOVE_TIMER: u8 = 0b1100_0011;
-
+    pub const GET_SELECT_DROP: u8 = 0b1111_1101;
+    pub const GET_CELL_LEN: u8 = 0b1111_1110;
     pub const HALT: u8 = 0b1111_1111;
 }
 pub use self::instructions::*;
@@ -69,10 +79,12 @@ impl GameState {
         instruction_pointer: &mut usize,
         instruction: u8,
     ) {
-        macro_rules! jump {
-            () => {
+        macro_rules! jump_if {
+            ($boolean:expr) => {
                 *instruction_pointer += 1;
-                *instruction_pointer += bytecode[*instruction_pointer] as usize;
+                if $boolean {
+                    *instruction_pointer += bytecode[*instruction_pointer] as usize;
+                }
             };
         }
 
@@ -115,50 +127,67 @@ impl GameState {
                 let a = self.vm.pop();
                 self.vm.push(a / b);
             }
-            NE_BRANCH => {
+            MAX => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                if a != b {
-                    jump!();
-                }
+                self.vm.push(if a > b { a } else { b });
+            }
+            MIN => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                self.vm.push(if a < b { a } else { b });
+            }
+            AND => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                self.vm.push(a & b);
+            }
+            OR => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                self.vm.push(a | b);
+            }
+            NOT => {
+                let a = self.vm.pop();
+                self.vm.push(if a == 0 { 255 } else { 0 });
+            }
+            IF => {
+                let a = self.vm.pop();
+
+                jump_if!(a != 0);
             }
             EQ_BRANCH => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                if a == b {
-                    jump!();
-                }
+                jump_if!(a == b);
+            }
+            NE_BRANCH => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                jump_if!(a != b);
             }
             GT_BRANCH => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                if a > b {
-                    jump!();
-                }
+                jump_if!(a > b);
             }
             GE_BRANCH => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                if a >= b {
-                    jump!();
-                }
+                jump_if!(a >= b);
             }
             LT_BRANCH => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                if a < b {
-                    jump!();
-                }
+                jump_if!(a < b);
             }
             LE_BRANCH => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                if a <= b {
-                    jump!();
-                }
+                jump_if!(a <= b);
             }
             JUMP => {
-                jump!();
+                jump_if!(true);
             }
             GET_SELECT_POS => self.vm.push(self.selectpos),
             SET_SELECT_POS => {
@@ -178,6 +207,13 @@ impl GameState {
             }
             FILL_MOVE_TIMER => {
                 self.movetimer = MOVE_TIMER_MAX;
+            }
+            GET_SELECT_DROP => {
+                self.vm.push(if self.selectdrop { 255 } else { 0 });
+            }
+            GET_CELL_LEN => {
+                self.vm
+                    .push(self.cells[self.selectpos as usize].len() as u8);
             }
             HALT => *instruction_pointer = bytecode.len() - 1,
             _ => unimplemented!(),
