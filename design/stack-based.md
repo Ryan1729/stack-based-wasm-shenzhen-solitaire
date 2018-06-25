@@ -20,3 +20,14 @@ Part of the reason that "porting" this game to start generating games by generat
 * separate sets for each button
 * win checking
 
+____
+
+# moving enough into bytecode that we can start generating
+
+It's unclear how easy generating bytecode that maintains invariants like winnability or crash avoidance will be. Therefore we want to limit the amount of time spent on the bytecode before we attempt to generate it. At the same time we don't want generating to fail only because there's no interesting programs to generate. So we want to move just enough into bytecode that at least one interesting thing can be generated, then start generating.
+
+So first we need to decide which game we want to try and implement in bytecode. What would we need in order to implement Klondike, admittedly a similar game to Shenzhen Solitaire, or at least something close enough to it? The most obvious difference is the deck. We could, of course, add a way to specify the contents of the deck as part of the bytecode or in some adjacent data. But then we would need to add more graphics. While we could do that, the set of games that naturally translate into a standard deck of playing cards has been explored pretty throughly. I'd like to at least attempt to find an interesting distinct game which uses the Shenzhen deck verbatim. One simple but potentially distinct version would be to use the flower foundation as a regular foundation and just not care where the flower ends up. We'll say that the flower can be stacked on anything but nothing can be stacked on it. Is that sufficiently distinct? It is at least distinct enough that if a generator generated that I would be at least somewhat impressed. We can always expand the bytecode space later if we are actually able to exhaust, (or exhaust interest in,) a given space.
+
+What would be required to be part of the bytecode to allow that? All the foundation pile checking which includes more or less all of the update functions except for `movecards`. Since we would need to make the `canmovedragons` part of the bytecode we would need to have a way for the bytecode to indicate which buttons can be pushed since the drawing code needs to know that. That is, assuming we want to allow moving dragons to the flower foundation. If we don't want to do that, then we can postpone that for later, but since it would increase the amount of possible games greatly, (three buttons that can run bytecode under arbitrary bytecode-checkable conditions!), that would be a good area to expand the bytecode into eventually.
+
+In summary, we should convert everything called from the input if-else block in `update`, including `automove` except for `canmovedragons` and `movedragons`.
