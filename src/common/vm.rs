@@ -35,13 +35,21 @@ impl Default for VM {
     }
 }
 
+macro_rules! console_assert {
+    ($boolean:expr, $message:expr) => {
+        if !($boolean) {
+            console!(error, $message);
+        }
+    }
+}
+
 impl VM {
     pub const STACK_SIZE: usize = 128;
 
     pub fn pop(&mut self) -> u8 {
-        let output = self.stack[self.stack_pointer];
+        console_assert!(!self.is_empty(), "stack underflow!");
 
-        assert!(self.stack_pointer != usize::max_value(), "stack underflow!");
+        let output = self.stack[self.stack_pointer];
 
         self.stack_pointer = self.stack_pointer.wrapping_sub(1);
 
@@ -51,8 +59,12 @@ impl VM {
     pub fn push(&mut self, byte: u8) {
         self.stack_pointer = self.stack_pointer.wrapping_add(1);
 
-        assert!(self.stack_pointer != usize::max_value(), "stack overflow!");
+        console_assert!(!self.is_empty(), "stack overflow!");
 
         self.stack[self.stack_pointer] = byte;
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.stack_pointer == usize::max_value()
     }
 }

@@ -51,6 +51,8 @@ pub mod instructions {
     pub const LITERAL: u8 = 0b101010;
     pub const FORGET: u8 = LITERAL | 1;
 
+    pub const ASSERT_EMPTY_STACK: u8 = 0b1111_0000;
+
     pub const GET_SELECT_DROP: u8 = 0b1111_1101;
     pub const GET_CELL_LEN: u8 = 0b1111_1110;
     pub const HALT: u8 = 0b1111_1111;
@@ -207,6 +209,9 @@ impl GameState {
             }
             FILL_MOVE_TIMER => {
                 self.movetimer = MOVE_TIMER_MAX;
+            }
+            ASSERT_EMPTY_STACK => {
+                assert!(self.vm.is_empty(), "ASSERT_EMPTY_STACK failed!");
             }
             GET_SELECT_DROP => {
                 self.vm.push(if self.selectdrop { 255 } else { 0 });

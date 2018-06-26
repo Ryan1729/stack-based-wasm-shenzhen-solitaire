@@ -113,7 +113,7 @@ fn update(state: &mut GameState, input: Input) {
                         1,
                         SUB,
                         SET_SELECT_POS,
-                        //empty stack
+                        ASSERT_EMPTY_STACK,
                         LITERAL,
                         0,
                         SET_SELECT_DEPTH,
@@ -137,15 +137,32 @@ fn update(state: &mut GameState, input: Input) {
                         1,
                         SUB,
                         SET_SELECT_POS,
+                        ASSERT_EMPTY_STACK,
+                        GET_CELL_LEN,
+                        GET_SELECT_DROP,
+                        NOT,
+                        AND,
+                        IF,
+                        13,
+                        GET_SELECT_POS,
+                        LITERAL,
+                        BUTTON_COLUMN,
+                        EQ_BRANCH,
+                        4,
+                        LITERAL,
+                        0,
+                        JUMP,
+                        8,
+                        LITERAL,
+                        2,
+                        JUMP,
+                        4,
+                        GET_CELL_LEN,
+                        LITERAL,
+                        1,
+                        SUB,
+                        SET_SELECT_DEPTH,
                     ]);
-                    let len = state.cells[state.selectpos as usize].len();
-                    state.selectdepth = if len > 0 && !state.selectdrop {
-                        len as u8 - 1
-                    } else if state.selectpos == BUTTON_COLUMN {
-                        2
-                    } else {
-                        0
-                    };
                 } else {
                     state.interpret(&[GET_SELECT_DEPTH, LITERAL, 1, SUB, SET_SELECT_DEPTH]);
                 }
