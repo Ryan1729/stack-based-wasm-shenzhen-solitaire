@@ -123,11 +123,21 @@ fn update(state: &mut GameState, input: Input) {
                 }
             } else if input.pressed_this_frame(Button::Down) {
                 if state.selectdepth == 0 {
-                    state.selectpos = if state.selectpos > END_OF_FOUNDATIONS {
-                        state.selectpos - START_OF_TABLEAU
-                    } else {
-                        state.selectpos + START_OF_TABLEAU
-                    };
+                    state.interpret(&[
+                        GET_SELECT_POS,
+                        LITERAL,
+                        START_OF_TABLEAU,
+                        GET_SELECT_POS,
+                        LITERAL,
+                        END_OF_FOUNDATIONS,
+                        GT_BRANCH,
+                        3,
+                        ADD,
+                        JUMP,
+                        1,
+                        SUB,
+                        SET_SELECT_POS,
+                    ]);
                     let len = state.cells[state.selectpos as usize].len();
                     state.selectdepth = if len > 0 && !state.selectdrop {
                         len as u8 - 1
