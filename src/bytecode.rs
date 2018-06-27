@@ -20,19 +20,28 @@ pub mod instructions {
     pub const OR: u8 = 0b1110;
     pub const NOT: u8 = 0b1111;
 
-    const EQ: u8 = 0b001;
-    const GT: u8 = 0b010;
-    const LT: u8 = 0b100;
+    const EQ_FLAG: u8 = 0b001;
+    const GT_FLAG: u8 = 0b010;
+    const LT_FLAG: u8 = 0b100;
     const BRANCH: u8 = 0b1001_0000;
 
     pub const IF: u8 = BRANCH;
-    pub const EQ_BRANCH: u8 = BRANCH | EQ;
-    pub const NE_BRANCH: u8 = BRANCH | GT | LT;
-    pub const GT_BRANCH: u8 = BRANCH | GT;
-    pub const GE_BRANCH: u8 = GT_BRANCH | EQ;
-    pub const LT_BRANCH: u8 = BRANCH | LT;
-    pub const LE_BRANCH: u8 = LT_BRANCH | EQ;
-    pub const JUMP: u8 = BRANCH | EQ | GT | LT;
+    pub const EQ_BRANCH: u8 = BRANCH | EQ_FLAG;
+    pub const NE_BRANCH: u8 = BRANCH | GT_FLAG | LT_FLAG;
+    pub const GT_BRANCH: u8 = BRANCH | GT_FLAG;
+    pub const GE_BRANCH: u8 = GT_BRANCH | EQ_FLAG;
+    pub const LT_BRANCH: u8 = BRANCH | LT_FLAG;
+    pub const LE_BRANCH: u8 = LT_BRANCH | EQ_FLAG;
+    pub const JUMP: u8 = BRANCH | EQ_FLAG | GT_FLAG | LT_FLAG;
+
+    const BOOLEAN: u8 = 0b1010_0000;
+
+    pub const EQ: u8 = BOOLEAN | EQ_FLAG;
+    pub const NE: u8 = BOOLEAN | GT_FLAG | LT_FLAG;
+    pub const GT: u8 = BOOLEAN | GT_FLAG;
+    pub const GE: u8 = GT | EQ_FLAG;
+    pub const LT: u8 = BOOLEAN | LT_FLAG;
+    pub const LE: u8 = LT | EQ_FLAG;
 
     const SET: u8 = 0b010;
     const DEPTH: u8 = 0b0000_1000;
@@ -86,6 +95,16 @@ impl GameState {
                 *instruction_pointer += 1;
                 if $boolean {
                     *instruction_pointer += bytecode[*instruction_pointer] as usize;
+                }
+            };
+        }
+
+        macro_rules! stack_bool {
+            ($boolean:expr) => {
+                if $boolean {
+                    255
+                } else {
+                    0
                 }
             };
         }
@@ -191,6 +210,36 @@ impl GameState {
             JUMP => {
                 jump_if!(true);
             }
+            EQ => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                self.vm.push(stack_bool!(a == b));
+            }
+            NE => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                self.vm.push(stack_bool!(a != b));
+            }
+            GT => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                self.vm.push(stack_bool!(a > b));
+            }
+            GE => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                self.vm.push(stack_bool!(a >= b));
+            }
+            LT => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                self.vm.push(stack_bool!(a < b));
+            }
+            LE => {
+                let b = self.vm.pop();
+                let a = self.vm.pop();
+                self.vm.push(stack_bool!(a <= b));
+            }
             GET_SELECT_POS => self.vm.push(self.selectpos),
             SET_SELECT_POS => {
                 self.selectpos = self.vm.pop();
@@ -214,7 +263,7 @@ impl GameState {
                 assert!(self.vm.is_empty(), "ASSERT_EMPTY_STACK failed!");
             }
             GET_SELECT_DROP => {
-                self.vm.push(if self.selectdrop { 255 } else { 0 });
+                self.vm.push(stack_bool!(self.selectdrop));
             }
             GET_CELL_LEN => {
                 self.vm

@@ -91,36 +91,57 @@ fn update(state: &mut GameState, input: Input) {
                     SET_SELECT_DEPTH,
                 ]);
             } else if input.pressed_this_frame(Button::Up) {
-                let changepos = if state.selectpos == BUTTON_COLUMN {
-                    state.selectdepth >= 2
-                } else {
-                    let len = state.cells[state.selectpos as usize].len();
-                    len == 0 || state.selectdepth >= len as u8 - 1 || state.selectdrop
-                };
-
-                if changepos {
-                    state.interpret(&[
-                        GET_SELECT_POS,
-                        LITERAL,
-                        START_OF_TABLEAU,
-                        GET_SELECT_POS,
-                        LITERAL,
-                        END_OF_FOUNDATIONS,
-                        GT_BRANCH,
-                        3,
-                        ADD,
-                        JUMP,
-                        1,
-                        SUB,
-                        SET_SELECT_POS,
-                        ASSERT_EMPTY_STACK,
-                        LITERAL,
-                        0,
-                        SET_SELECT_DEPTH,
-                    ]);
-                } else {
-                    state.interpret(&[GET_SELECT_DEPTH, LITERAL, 1, ADD, SET_SELECT_DEPTH]);
-                }
+                state.interpret(&[
+                    GET_SELECT_POS,
+                    LITERAL,
+                    BUTTON_COLUMN,
+                    EQ_BRANCH,
+                    15,
+                    GET_CELL_LEN,
+                    LITERAL,
+                    0,
+                    EQ,
+                    GET_SELECT_DEPTH,
+                    GET_CELL_LEN,
+                    LITERAL,
+                    1,
+                    SUB,
+                    GE,
+                    GET_SELECT_DROP,
+                    OR,
+                    OR,
+                    JUMP,
+                    4,
+                    GET_SELECT_DEPTH,
+                    LITERAL,
+                    2,
+                    GE,
+                    IF,
+                    6,
+                    GET_SELECT_DEPTH,
+                    LITERAL,
+                    1,
+                    ADD,
+                    SET_SELECT_DEPTH,
+                    HALT,
+                    GET_SELECT_POS,
+                    LITERAL,
+                    START_OF_TABLEAU,
+                    GET_SELECT_POS,
+                    LITERAL,
+                    END_OF_FOUNDATIONS,
+                    GT_BRANCH,
+                    3,
+                    ADD,
+                    JUMP,
+                    1,
+                    SUB,
+                    SET_SELECT_POS,
+                    ASSERT_EMPTY_STACK,
+                    LITERAL,
+                    0,
+                    SET_SELECT_DEPTH,
+                ]);
             } else if input.pressed_this_frame(Button::Down) {
                 state.interpret(&[
                     GET_SELECT_DEPTH,
