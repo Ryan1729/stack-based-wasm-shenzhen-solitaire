@@ -63,15 +63,34 @@ fn update(state: &mut GameState, input: Input) {
                     SET_SELECT_DEPTH,
                 ]);
             } else if input.pressed_this_frame(Button::Right) {
-                state.selectpos = if state.selectpos == START_OF_TABLEAU - 1 {
-                    0
-                } else if state.selectpos >= CELLS_MAX_INDEX {
-                    START_OF_TABLEAU
-                } else {
-                    state.selectpos + 1
-                };
-
                 state.interpret(&[
+                    GET_SELECT_POS,
+                    LITERAL,
+                    START_OF_TABLEAU,
+                    LITERAL,
+                    1,
+                    SUB,
+                    EQ_BRANCH,
+                    15,
+                    GET_SELECT_POS,
+                    LITERAL,
+                    CELLS_MAX_INDEX,
+                    GE_BRANCH,
+                    6,
+                    GET_SELECT_POS,
+                    LITERAL,
+                    1,
+                    ADD,
+                    JUMP,
+                    6,
+                    LITERAL,
+                    START_OF_TABLEAU,
+                    JUMP,
+                    2,
+                    LITERAL,
+                    0,
+                    SET_SELECT_POS,
+                    ASSERT_EMPTY_STACK,
                     GET_SELECT_DROP,
                     IF,
                     11,
