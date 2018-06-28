@@ -36,14 +36,31 @@ fn update(state: &mut GameState, input: Input) {
             state.interpret(&[FILL_MOVE_TIMER]);
         } else {
             if input.pressed_this_frame(Button::Left) {
-                state.selectpos = if state.selectpos == 0 {
-                    START_OF_TABLEAU - 1
-                } else if state.selectpos == START_OF_TABLEAU {
-                    CELLS_MAX_INDEX
-                } else {
-                    state.selectpos - 1
-                };
                 state.interpret(&[
+                    GET_SELECT_POS,
+                    LITERAL,
+                    0,
+                    EQ_BRANCH,
+                    15,
+                    GET_SELECT_POS,
+                    LITERAL,
+                    START_OF_TABLEAU,
+                    EQ_BRANCH,
+                    6,
+                    GET_SELECT_POS,
+                    LITERAL,
+                    1,
+                    SUB,
+                    JUMP,
+                    6,
+                    LITERAL,
+                    CELLS_MAX_INDEX,
+                    JUMP,
+                    2,
+                    LITERAL,
+                    START_OF_TABLEAU - 1,
+                    SET_SELECT_POS,
+                    ASSERT_EMPTY_STACK,
                     GET_SELECT_DROP,
                     IF,
                     11,
