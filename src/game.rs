@@ -256,9 +256,7 @@ fn update(state: &mut GameState, input: Input) {
                                 };
 
                                 if grabcard <= 128 {
-                                    if droppos >= BUTTON_COLUMN && droppos <= FLOWER_FOUNDATION {
-                                        false
-                                    } else if droppos >= START_OF_FOUNDATIONS && droppos < START_OF_TABLEAU {
+                                    if droppos >= START_OF_FOUNDATIONS && droppos < START_OF_TABLEAU {
                                         let droppos = droppos as usize;
                                         if grabdepth == 0 {
                                             if cells[droppos].len() == 0 {
@@ -289,6 +287,7 @@ fn update(state: &mut GameState, input: Input) {
                                 }
                             }
                         }{ 255 } else {0};
+
                         state.interpret(&[
                             GET_GRAB_CARD_OR_255,
                             LITERAL,
@@ -300,7 +299,13 @@ fn update(state: &mut GameState, input: Input) {
                             LITERAL,
                             BUTTON_COLUMN,
                             LT_BRANCH,
-                            4, //A
+                            10, //A
+                            GET_SELECT_POS,
+                            LITERAL,
+                            FLOWER_FOUNDATION,
+                            GT_BRANCH,
+                            1,
+                            HALT,
                             LITERAL,
                             monster_expression,
                             JUMP,
