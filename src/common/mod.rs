@@ -64,3 +64,24 @@ pub mod Button {
         }
     }
 }
+
+pub fn movecards(state: &mut GameState, grabpos: u8, grabdepth: u8, droppos: u8) {
+    let grabpos = grabpos as usize;
+    let grabdepth = grabdepth as usize;
+    let droppos = droppos as usize;
+    if droppos <= END_OF_FOUNDATIONS as usize {
+        if let Some(last) = state.cells[grabpos].pop() {
+            if state.cells[droppos].len() > 0 {
+                state.cells[droppos][0] = last;
+            } else {
+                state.cells[droppos].push(last);
+            }
+        }
+    } else {
+        let len = state.cells[grabpos].len();
+
+        let temp: Vec<_> = state.cells[grabpos].drain(len - 1 - grabdepth..).collect();
+
+        state.cells[droppos].extend(temp.into_iter());
+    }
+}

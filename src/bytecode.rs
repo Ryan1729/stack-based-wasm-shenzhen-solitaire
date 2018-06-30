@@ -1,4 +1,4 @@
-use common::{GameState, MOVE_TIMER_MAX};
+use common::{movecards, GameState, MOVE_TIMER_MAX};
 
 pub mod instructions {
     pub const NO_OP: u8 = 0;
@@ -62,6 +62,7 @@ pub mod instructions {
 
     pub const ASSERT_EMPTY_STACK: u8 = 0b1111_0000;
 
+    pub const MOVE_CARDS: u8 = 0b1111_1100;
     pub const GET_SELECT_DROP: u8 = 0b1111_1101;
     pub const GET_CELL_LEN: u8 = 0b1111_1110;
     pub const HALT: u8 = 0b1111_1111;
@@ -261,6 +262,13 @@ impl GameState {
             }
             ASSERT_EMPTY_STACK => {
                 assert!(self.vm.is_empty(), "ASSERT_EMPTY_STACK failed!");
+            }
+            MOVE_CARDS => {
+                let droppos = self.vm.pop();
+                let grabdepth = self.vm.pop();
+                let grabpos = self.vm.pop();
+
+                movecards(self, grabpos, grabdepth, droppos);
             }
             GET_SELECT_DROP => {
                 self.vm.push(stack_bool!(self.selectdrop));

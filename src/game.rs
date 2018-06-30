@@ -244,11 +244,14 @@ fn update(state: &mut GameState, input: Input) {
                             state.grabdepth,
                             state.selectpos,
                         ) {
-                            let grabpos = state.grabpos;
-                            let grabdepth = state.grabdepth;
-                            let selectpos = state.selectpos;
-                            movecards(state, grabpos, grabdepth, selectpos);
-                            state.interpret(&[DROP, FILL_MOVE_TIMER]);
+                            state.interpret(&[
+                                GET_GRAB_POS,
+                                GET_GRAB_DEPTH,
+                                GET_SELECT_POS,
+                                MOVE_CARDS,
+                                DROP,
+                                FILL_MOVE_TIMER
+                            ]);
                         }
                     } else if cangrab(&state.cells, state.selectpos, state.selectdepth) {
                         state.interpret(&[
@@ -364,27 +367,6 @@ fn getsuit(card: u8) -> u8 {
 
 fn getcardnum(card: u8) -> u8 {
     card - (getsuit(card) * 10)
-}
-
-fn movecards(state: &mut GameState, grabpos: u8, grabdepth: u8, droppos: u8) {
-    let grabpos = grabpos as usize;
-    let grabdepth = grabdepth as usize;
-    let droppos = droppos as usize;
-    if droppos <= END_OF_FOUNDATIONS as usize {
-        if let Some(last) = state.cells[grabpos].pop() {
-            if state.cells[droppos].len() > 0 {
-                state.cells[droppos][0] = last;
-            } else {
-                state.cells[droppos].push(last);
-            }
-        }
-    } else {
-        let len = state.cells[grabpos].len();
-
-        let temp: Vec<_> = state.cells[grabpos].drain(len - 1 - grabdepth..).collect();
-
-        state.cells[droppos].extend(temp.into_iter());
-    }
 }
 
 fn canmovedragons(state: &GameState, suit: u8) -> bool {
