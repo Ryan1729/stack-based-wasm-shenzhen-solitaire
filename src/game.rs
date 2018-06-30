@@ -256,22 +256,7 @@ fn update(state: &mut GameState, input: Input) {
                                 };
 
                                 if grabcard <= 128 {
-                                    if droppos >= START_OF_FOUNDATIONS && droppos < START_OF_TABLEAU {
-                                        let droppos = droppos as usize;
-                                        if grabdepth == 0 {
-                                            if cells[droppos].len() == 0 {
-                                                getcardnum(grabcard) == 1
-                                            } else {
-                                                let dropcard = last_unchecked!(cells[droppos]);
-
-                                                getsuit(grabcard) == getsuit(dropcard)
-                                                    && getcardnum(grabcard) != 0
-                                                    && getcardnum(grabcard) == getcardnum(dropcard) + 1
-                                            }
-                                        } else {
-                                            false
-                                        }
-                                    } else {
+                                     {
                                         let droppos = droppos as usize;
                                         if cells[droppos].len() == 0 {
                                             true
@@ -288,6 +273,32 @@ fn update(state: &mut GameState, input: Input) {
                             }
                         }{ 255 } else {0};
 
+                        let small_expression = if {
+                            let cells = &state.cells;
+
+                            let grabpos = state.grabpos as usize;
+                            let grabdepth = state.grabdepth as usize;
+                            let droppos = state.selectpos as usize;
+
+                            let grabcard = {
+                                let len = cells[grabpos].len();
+                                if len < grabdepth {
+                                    255
+                                } else {
+                                    cells[grabpos][len - 1 - grabdepth]
+                                }
+                            };
+
+                            if cells[droppos].len() == 0 {
+                            getcardnum(grabcard) == 1
+                        } else {
+                            let dropcard = last_unchecked!(cells[droppos]);
+
+                            getsuit(grabcard) == getsuit(dropcard)
+                                && getcardnum(grabcard) != 0
+                                && getcardnum(grabcard) == getcardnum(dropcard) + 1
+                        }} {255} else {0};
+
                         state.interpret(&[
                             GET_GRAB_CARD_OR_255,
                             LITERAL,
@@ -299,13 +310,33 @@ fn update(state: &mut GameState, input: Input) {
                             LITERAL,
                             BUTTON_COLUMN,
                             LT_BRANCH,
-                            10, //A
+                            30, //A
                             GET_SELECT_POS,
                             LITERAL,
                             FLOWER_FOUNDATION,
                             GT_BRANCH,
                             1,
                             HALT,
+                            GET_SELECT_POS,
+                            LITERAL,
+                            START_OF_FOUNDATIONS,
+                            LT,
+                            GET_SELECT_POS,
+                            LITERAL,
+                            START_OF_TABLEAU,
+                            GE,
+                            OR,
+                            IF,
+                            9, //B
+                            GET_GRAB_DEPTH,
+                            NOT,
+                            IF,
+                            1,
+                            HALT,
+                            LITERAL,
+                            small_expression,
+                            JUMP,
+                            13, //END
                             LITERAL,
                             monster_expression,
                             JUMP,
@@ -319,7 +350,7 @@ fn update(state: &mut GameState, input: Input) {
                             0,
                             EQ,
                             AND,
-                            IF,
+                            IF, //END
                             1,
                             HALT,
                             GET_GRAB_POS,
