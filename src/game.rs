@@ -238,12 +238,57 @@ fn update(state: &mut GameState, input: Input) {
                     }
                 } else {
                     if state.selectdrop {
-                        if candrop(
-                            &state.cells,
-                            state.grabpos,
-                            state.grabdepth,
-                            state.selectpos,
-                        ) {
+                        if {
+                            let cells = &state.cells;
+
+                            let grabpos = state.grabpos as usize;
+                            let grabdepth = state.grabdepth as usize;
+                            let droppos = state.selectpos;
+
+                            let possible_grabcard = {
+                                let len = cells[grabpos].len();
+                                if len < grabdepth {
+                                    None
+                                } else {
+                                    Some(cells[grabpos][len - 1 - grabdepth])
+                                }
+                            };
+
+                            if let Some(grabcard) = possible_grabcard {
+                                if droppos < BUTTON_COLUMN {
+                                    cells[droppos as usize].len() == 0 && grabdepth == 0
+                                } else if droppos >= BUTTON_COLUMN && droppos <= FLOWER_FOUNDATION {
+                                    false
+                                } else if droppos >= START_OF_FOUNDATIONS && droppos < START_OF_TABLEAU {
+                                    let droppos = droppos as usize;
+                                    if grabdepth == 0 {
+                                        if cells[droppos].len() == 0 {
+                                            getcardnum(grabcard) == 1
+                                        } else {
+                                            let dropcard = last_unchecked!(cells[droppos]);
+
+                                            getsuit(grabcard) == getsuit(dropcard)
+                                                && getcardnum(grabcard) != 0
+                                                && getcardnum(grabcard) == getcardnum(dropcard) + 1
+                                        }
+                                    } else {
+                                        false
+                                    }
+                                } else {
+                                    let droppos = droppos as usize;
+                                    if cells[droppos].len() == 0 {
+                                        true
+                                    } else {
+                                        let dropcard = last_unchecked!(cells[droppos]);
+                                        getsuit(grabcard) != getsuit(dropcard)
+                                            && getcardnum(grabcard) != 0
+                                            && getcardnum(grabcard) == getcardnum(dropcard) - 1
+                                    }
+                                }
+                            } else {
+                                false
+                            }
+                        } {
                             state.interpret(&[
                                 GET_GRAB_POS,
                                 GET_GRAB_DEPTH,
@@ -311,50 +356,6 @@ fn cangrab(cells: &Cells, pos: u8, depth: u8) -> bool {
     }
 
     return true;
-}
-
-fn candrop(cells: &Cells, grabpos: u8, grabdepth: u8, droppos: u8) -> bool {
-    let grabpos = grabpos as usize;
-    let grabdepth = grabdepth as usize;
-    let grabcard = {
-        let len = cells[grabpos].len();
-        if len < grabdepth {
-            return false;
-        }
-
-        cells[grabpos][len - 1 - grabdepth]
-    };
-
-    if droppos < BUTTON_COLUMN {
-        cells[droppos as usize].len() == 0 && grabdepth == 0
-    } else if droppos >= BUTTON_COLUMN && droppos <= FLOWER_FOUNDATION {
-        false
-    } else if droppos >= START_OF_FOUNDATIONS && droppos < START_OF_TABLEAU {
-        let droppos = droppos as usize;
-        if grabdepth == 0 {
-            if cells[droppos].len() == 0 {
-                getcardnum(grabcard) == 1
-            } else {
-                let dropcard = last_unchecked!(cells[droppos]);
-
-                getsuit(grabcard) == getsuit(dropcard)
-                    && getcardnum(grabcard) != 0
-                    && getcardnum(grabcard) == getcardnum(dropcard) + 1
-            }
-        } else {
-            false
-        }
-    } else {
-        let droppos = droppos as usize;
-        if cells[droppos].len() == 0 {
-            true
-        } else {
-            let dropcard = last_unchecked!(cells[droppos]);
-            getsuit(grabcard) != getsuit(dropcard)
-                && getcardnum(grabcard) != 0
-                && getcardnum(grabcard) == getcardnum(dropcard) - 1
-        }
-    }
 }
 
 fn getsuit(card: u8) -> u8 {
