@@ -323,42 +323,31 @@ fn candrop(cells: &Cells, grabpos: u8, grabdepth: u8, droppos: u8) -> bool {
     };
 
     if droppos < BUTTON_COLUMN {
-        return cells[droppos as usize].len() == 0 && grabdepth == 0;
+        cells[droppos as usize].len() == 0 && grabdepth == 0
     } else if droppos >= BUTTON_COLUMN && droppos <= FLOWER_FOUNDATION {
-        return false;
-    } else if droppos >= START_OF_FOUNDATIONS && droppos < START_OF_TABLEAU {
-        let droppos = droppos as usize;
-        if grabdepth == 0 {
-            if cells[droppos].len() == 0 {
-                if getcardnum(grabcard) == 1 {
-                    return true;
-                }
-            } else {
-                let dropcard = last_unchecked!(cells[droppos]);
-                if getsuit(grabcard) == getsuit(dropcard)
-                    && getcardnum(grabcard) != 0
-                    && getcardnum(grabcard) == getcardnum(dropcard) + 1
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    } else {
-        let droppos = droppos as usize;
-        if cells[droppos].len() == 0 {
-            return true;
+        false
+    } else if {
+        let dropcard = last_unchecked!(cells[droppos as usize]);
+
+        getsuit(grabcard) != getsuit(dropcard)
+            && getcardnum(grabcard) != 0
+            && getcardnum(grabcard) == getcardnum(dropcard) - 1
+    } {
+        if droppos < START_OF_FOUNDATIONS || droppos >= START_OF_TABLEAU {
+            true
         } else {
-            let dropcard = last_unchecked!(cells[droppos]);
-            if getsuit(grabcard) != getsuit(dropcard)
-                && getcardnum(grabcard) != 0
-                && getcardnum(grabcard) == getcardnum(dropcard) - 1
-            {
-                return true;
-            }
+            grabdepth == 0 && cells[droppos as usize].len() != 0
         }
-        return false;
+    } else if cells[droppos as usize].len() == 0 {
+        if droppos < START_OF_FOUNDATIONS || droppos >= START_OF_TABLEAU {
+            true
+        } else {
+            grabdepth == 0 && getcardnum(grabcard) == 1
+        }
+    } else {
+        false
     }
+
 }
 
 fn getsuit(card: u8) -> u8 {
