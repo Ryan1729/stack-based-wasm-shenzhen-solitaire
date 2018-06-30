@@ -238,66 +238,92 @@ fn update(state: &mut GameState, input: Input) {
                     }
                 } else {
                     if state.selectdrop {
-                        if {
-                            let cells = &state.cells;
+                        let monster_expression = if {
+                            {
+                                let cells = &state.cells;
 
-                            let grabpos = state.grabpos as usize;
-                            let grabdepth = state.grabdepth as usize;
-                            let droppos = state.selectpos;
+                                let grabpos = state.grabpos as usize;
+                                let grabdepth = state.grabdepth as usize;
+                                let droppos = state.selectpos;
 
-                            let possible_grabcard = {
-                                let len = cells[grabpos].len();
-                                if len < grabdepth {
-                                    None
-                                } else {
-                                    Some(cells[grabpos][len - 1 - grabdepth])
-                                }
-                            };
+                                let grabcard = {
+                                    let len = cells[grabpos].len();
+                                    if len < grabdepth {
+                                        255
+                                    } else {
+                                        cells[grabpos][len - 1 - grabdepth]
+                                    }
+                                };
 
-                            if let Some(grabcard) = possible_grabcard {
-                                if droppos < BUTTON_COLUMN {
-                                    cells[droppos as usize].len() == 0 && grabdepth == 0
-                                } else if droppos >= BUTTON_COLUMN && droppos <= FLOWER_FOUNDATION {
-                                    false
-                                } else if droppos >= START_OF_FOUNDATIONS && droppos < START_OF_TABLEAU {
-                                    let droppos = droppos as usize;
-                                    if grabdepth == 0 {
-                                        if cells[droppos].len() == 0 {
-                                            getcardnum(grabcard) == 1
+                                if grabcard <= 128 {
+                                    if droppos >= BUTTON_COLUMN && droppos <= FLOWER_FOUNDATION {
+                                        false
+                                    } else if droppos >= START_OF_FOUNDATIONS && droppos < START_OF_TABLEAU {
+                                        let droppos = droppos as usize;
+                                        if grabdepth == 0 {
+                                            if cells[droppos].len() == 0 {
+                                                getcardnum(grabcard) == 1
+                                            } else {
+                                                let dropcard = last_unchecked!(cells[droppos]);
+
+                                                getsuit(grabcard) == getsuit(dropcard)
+                                                    && getcardnum(grabcard) != 0
+                                                    && getcardnum(grabcard) == getcardnum(dropcard) + 1
+                                            }
                                         } else {
-                                            let dropcard = last_unchecked!(cells[droppos]);
-
-                                            getsuit(grabcard) == getsuit(dropcard)
-                                                && getcardnum(grabcard) != 0
-                                                && getcardnum(grabcard) == getcardnum(dropcard) + 1
+                                            false
                                         }
                                     } else {
-                                        false
+                                        let droppos = droppos as usize;
+                                        if cells[droppos].len() == 0 {
+                                            true
+                                        } else {
+                                            let dropcard = last_unchecked!(cells[droppos]);
+                                            getsuit(grabcard) != getsuit(dropcard)
+                                                && getcardnum(grabcard) != 0
+                                                && getcardnum(grabcard) == getcardnum(dropcard) - 1
+                                        }
                                     }
                                 } else {
-                                    let droppos = droppos as usize;
-                                    if cells[droppos].len() == 0 {
-                                        true
-                                    } else {
-                                        let dropcard = last_unchecked!(cells[droppos]);
-                                        getsuit(grabcard) != getsuit(dropcard)
-                                            && getcardnum(grabcard) != 0
-                                            && getcardnum(grabcard) == getcardnum(dropcard) - 1
-                                    }
+                                    false
                                 }
-                            } else {
-                                false
                             }
-                        } {
-                            state.interpret(&[
-                                GET_GRAB_POS,
-                                GET_GRAB_DEPTH,
-                                GET_SELECT_POS,
-                                MOVE_CARDS,
-                                DROP,
-                                FILL_MOVE_TIMER
-                            ]);
-                        }
+                        }{ 255 } else {0};
+                        state.interpret(&[
+                            GET_GRAB_CARD_OR_255,
+                            LITERAL,
+                            255,
+                            NE_BRANCH,
+                            1,
+                            HALT,
+                            GET_SELECT_POS,
+                            LITERAL,
+                            BUTTON_COLUMN,
+                            LT_BRANCH,
+                            4, //A
+                            LITERAL,
+                            monster_expression,
+                            JUMP,
+                            9,
+                            GET_CELL_LEN, //A
+                            LITERAL,
+                            0,
+                            EQ,
+                            GET_GRAB_DEPTH,
+                            LITERAL,
+                            0,
+                            EQ,
+                            AND,
+                            IF,
+                            1,
+                            HALT,
+                            GET_GRAB_POS,
+                            GET_GRAB_DEPTH,
+                            GET_SELECT_POS,
+                            MOVE_CARDS,
+                            DROP,
+                            FILL_MOVE_TIMER
+                        ]);
                     } else if cangrab(&state.cells, state.selectpos, state.selectdepth) {
                         state.interpret(&[
                             GET_SELECT_POS,

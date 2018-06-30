@@ -62,6 +62,7 @@ pub mod instructions {
 
     pub const ASSERT_EMPTY_STACK: u8 = 0b1111_0000;
 
+    pub const GET_GRAB_CARD_OR_255: u8 = 0b1111_1011;
     pub const MOVE_CARDS: u8 = 0b1111_1100;
     pub const GET_SELECT_DROP: u8 = 0b1111_1101;
     pub const GET_CELL_LEN: u8 = 0b1111_1110;
@@ -262,6 +263,20 @@ impl GameState {
             }
             ASSERT_EMPTY_STACK => {
                 assert!(self.vm.is_empty(), "ASSERT_EMPTY_STACK failed!");
+            }
+            GET_GRAB_CARD_OR_255 => {
+                let grabpos = self.grabpos as usize;
+                let grabdepth = self.grabdepth as usize;
+                let cells = &self.cells;
+
+                let len = cells[grabpos].len();
+                let output = if len < grabdepth {
+                    255
+                } else {
+                    cells[grabpos][len - 1 - grabdepth]
+                };
+
+                self.vm.push(output);
             }
             MOVE_CARDS => {
                 let droppos = self.vm.pop();
