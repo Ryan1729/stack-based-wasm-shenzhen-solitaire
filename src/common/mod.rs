@@ -11,6 +11,12 @@ pub use game_state::*;
 pub mod vm;
 pub use vm::*;
 
+macro_rules! last_unchecked {
+    ($vec:expr) => {
+        $vec[$vec.len() - 1]
+    };
+}
+
 pub struct State {
     pub game_state: GameState,
     pub framebuffer: Framebuffer,

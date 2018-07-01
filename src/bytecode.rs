@@ -62,9 +62,10 @@ pub mod instructions {
 
     pub const ASSERT_EMPTY_STACK: u8 = 0b1111_0000;
 
-    pub const GET_CARD_NUM: u8 = 0b1111_1001;
-    pub const GET_CARD_SUIT: u8 = 0b1111_1010;
-    pub const GET_GRAB_CARD_OR_255: u8 = 0b1111_1011;
+    pub const GET_CARD_NUM: u8 = 0b1111_1000;
+    pub const GET_CARD_SUIT: u8 = 0b1111_1001;
+    pub const GET_GRAB_CARD_OR_255: u8 = 0b1111_1010;
+    pub const GET_DROP_CARD_OR_255: u8 = 0b1111_1011;
     pub const MOVE_CARDS: u8 = 0b1111_1100;
     pub const GET_SELECT_DROP: u8 = 0b1111_1101;
     pub const GET_CELL_LEN: u8 = 0b1111_1110;
@@ -284,6 +285,21 @@ impl GameState {
                     255
                 } else {
                     cells[grabpos][len - 1 - grabdepth]
+                };
+
+                self.vm.push(output);
+            }
+            GET_DROP_CARD_OR_255 => {
+                let droppos = self.selectpos as usize;
+                let cells = &self.cells;
+
+                let output = {
+                    let len = cells[droppos].len();
+                    if len == 0 {
+                        255
+                    } else {
+                        last_unchecked!(cells[droppos])
+                    }
                 };
 
                 self.vm.push(output);

@@ -3,12 +3,6 @@ use common::*;
 
 use std::cmp::{max, min};
 
-macro_rules! last_unchecked {
-    ($vec:expr) => {
-        $vec[$vec.len() - 1]
-    };
-}
-
 fn update(state: &mut GameState, input: Input) {
     if haswon(state) {
         if state.win_done {
@@ -273,40 +267,6 @@ fn update(state: &mut GameState, input: Input) {
                             }
                         }{ 255 } else {0};
 
-                        let small_expression = if {
-                            let cells = &state.cells;
-
-                            let grabpos = state.grabpos as usize;
-                            let grabdepth = state.grabdepth as usize;
-                            let droppos = state.selectpos as usize;
-
-                            let grabcard = {
-                                let len = cells[grabpos].len();
-                                if len < grabdepth {
-                                    255
-                                } else {
-                                    cells[grabpos][len - 1 - grabdepth]
-                                }
-                            };
-
-                            let dropcard = {
-                                let len = cells[droppos].len();
-                                if len == 0 {
-                                    255
-                                } else {
-                                    last_unchecked!(cells[droppos])
-                                }
-                            };
-
-                            if dropcard == 255 {
-                                false
-                            } else {
-                                getsuit(grabcard) == getsuit(dropcard)
-                                    && getcardnum(grabcard) != 0
-                                    && getcardnum(grabcard) == getcardnum(dropcard) + 1
-                            }
-                        } {255} else {0};
-
                         state.interpret(&[
                             GET_GRAB_CARD_OR_255,
                             LITERAL,
@@ -318,7 +278,7 @@ fn update(state: &mut GameState, input: Input) {
                             LITERAL,
                             BUTTON_COLUMN,
                             LT_BRANCH,
-                            38, //A
+                            61, //A
                             GET_SELECT_POS,
                             LITERAL,
                             FLOWER_FOUNDATION,
@@ -335,7 +295,7 @@ fn update(state: &mut GameState, input: Input) {
                             GE,
                             OR,
                             IF,
-                            17, //B
+                            40, //B
                             GET_GRAB_DEPTH,
                             NOT,
                             IF,
@@ -343,14 +303,37 @@ fn update(state: &mut GameState, input: Input) {
                             HALT,
                             GET_CELL_LEN,
                             IF,
-                            5,
+                            7,
                             GET_GRAB_CARD_OR_255,
                             GET_CARD_NUM,
                             LITERAL,
                             1,
                             EQ,
+                            JUMP,
+                            38, //END
+                            GET_DROP_CARD_OR_255,
                             LITERAL,
-                            small_expression,
+                            255,
+                            NE_BRANCH,
+                            1,
+                            HALT,
+                            GET_GRAB_CARD_OR_255,
+                            GET_CARD_SUIT,
+                            GET_DROP_CARD_OR_255,
+                            GET_CARD_SUIT,
+                            EQ,
+                            GET_GRAB_CARD_OR_255,
+                            GET_CARD_NUM,
+                            GET_GRAB_CARD_OR_255,
+                            GET_CARD_NUM,
+                            GET_DROP_CARD_OR_255,
+                            GET_CARD_NUM,
+                            LITERAL,
+                            1,
+                            ADD,
+                            EQ,
+                            AND,
+                            AND,
                             JUMP,
                             13, //END
                             LITERAL, //B
