@@ -289,15 +289,23 @@ fn update(state: &mut GameState, input: Input) {
                                 }
                             };
 
-                            if cells[droppos].len() == 0 {
-                            getcardnum(grabcard) == 1
-                        } else {
-                            let dropcard = last_unchecked!(cells[droppos]);
+                            let dropcard = {
+                                let len = cells[droppos].len();
+                                if len == 0 {
+                                    255
+                                } else {
+                                    last_unchecked!(cells[droppos])
+                                }
+                            };
 
-                            getsuit(grabcard) == getsuit(dropcard)
-                                && getcardnum(grabcard) != 0
-                                && getcardnum(grabcard) == getcardnum(dropcard) + 1
-                        }} {255} else {0};
+                            if dropcard == 255 {
+                                false
+                            } else {
+                                getsuit(grabcard) == getsuit(dropcard)
+                                    && getcardnum(grabcard) != 0
+                                    && getcardnum(grabcard) == getcardnum(dropcard) + 1
+                            }
+                        } {255} else {0};
 
                         state.interpret(&[
                             GET_GRAB_CARD_OR_255,
@@ -310,7 +318,7 @@ fn update(state: &mut GameState, input: Input) {
                             LITERAL,
                             BUTTON_COLUMN,
                             LT_BRANCH,
-                            30, //A
+                            38, //A
                             GET_SELECT_POS,
                             LITERAL,
                             FLOWER_FOUNDATION,
@@ -327,17 +335,25 @@ fn update(state: &mut GameState, input: Input) {
                             GE,
                             OR,
                             IF,
-                            9, //B
+                            17, //B
                             GET_GRAB_DEPTH,
                             NOT,
                             IF,
                             1,
                             HALT,
+                            GET_CELL_LEN,
+                            IF,
+                            5,
+                            GET_GRAB_CARD_OR_255,
+                            GET_CARD_NUM,
+                            LITERAL,
+                            1,
+                            EQ,
                             LITERAL,
                             small_expression,
                             JUMP,
                             13, //END
-                            LITERAL,
+                            LITERAL, //B
                             monster_expression,
                             JUMP,
                             9,
@@ -418,22 +434,6 @@ fn cangrab(cells: &Cells, pos: u8, depth: u8) -> bool {
     }
 
     return true;
-}
-
-fn getsuit(card: u8) -> u8 {
-    if card >= FLOWER_CARD {
-        3
-    } else if card >= FIRST_BLACK_CARD {
-        2
-    } else if card >= FIRST_GREEN_CARD {
-        1
-    } else {
-        0
-    }
-}
-
-fn getcardnum(card: u8) -> u8 {
-    card - (getsuit(card) * 10)
 }
 
 fn canmovedragons(state: &GameState, suit: u8) -> bool {

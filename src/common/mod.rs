@@ -85,3 +85,19 @@ pub fn movecards(state: &mut GameState, grabpos: u8, grabdepth: u8, droppos: u8)
         state.cells[droppos].extend(temp.into_iter());
     }
 }
+
+pub fn getsuit(card: u8) -> u8 {
+    if card >= FLOWER_CARD {
+        3
+    } else if card >= FIRST_BLACK_CARD {
+        2
+    } else if card >= FIRST_GREEN_CARD {
+        1
+    } else {
+        0
+    }
+}
+
+pub fn getcardnum(card: u8) -> u8 {
+    card - (getsuit(card) * 10)
+}
