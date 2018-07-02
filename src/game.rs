@@ -232,41 +232,6 @@ fn update(state: &mut GameState, input: Input) {
                     }
                 } else {
                     if state.selectdrop {
-                        let monster_expression = if {
-                            {
-                                let cells = &state.cells;
-
-                                let grabpos = state.grabpos as usize;
-                                let grabdepth = state.grabdepth as usize;
-                                let droppos = state.selectpos;
-
-                                let grabcard = {
-                                    let len = cells[grabpos].len();
-                                    if len < grabdepth {
-                                        255
-                                    } else {
-                                        cells[grabpos][len - 1 - grabdepth]
-                                    }
-                                };
-
-                                if grabcard <= 128 {
-                                     {
-                                        let droppos = droppos as usize;
-                                        if cells[droppos].len() == 0 {
-                                            true
-                                        } else {
-                                            let dropcard = last_unchecked!(cells[droppos]);
-                                            getsuit(grabcard) != getsuit(dropcard)
-                                                && getcardnum(grabcard) != 0
-                                                && getcardnum(grabcard) == getcardnum(dropcard) - 1
-                                        }
-                                    }
-                                } else {
-                                    false
-                                }
-                            }
-                        }{ 255 } else {0};
-
                         state.interpret(&[
                             GET_GRAB_CARD_OR_255,
                             LITERAL,
@@ -278,7 +243,7 @@ fn update(state: &mut GameState, input: Input) {
                             LITERAL,
                             BUTTON_COLUMN,
                             LT_BRANCH,
-                            61, //A
+                            82, //A
                             GET_SELECT_POS,
                             LITERAL,
                             FLOWER_FOUNDATION,
@@ -310,7 +275,7 @@ fn update(state: &mut GameState, input: Input) {
                             1,
                             EQ,
                             JUMP,
-                            38, //END
+                            59, //END
                             GET_DROP_CARD_OR_255,
                             LITERAL,
                             255,
@@ -335,9 +300,30 @@ fn update(state: &mut GameState, input: Input) {
                             AND,
                             AND,
                             JUMP,
-                            13, //END
-                            LITERAL, //B
-                            monster_expression,
+                            34, //END
+                            GET_DROP_CARD_OR_255, //B
+                            LITERAL,
+                            255,
+                            NE_BRANCH,
+                            1,
+                            HALT,
+                            GET_GRAB_CARD_OR_255,
+                            GET_CARD_SUIT,
+                            GET_DROP_CARD_OR_255,
+                            GET_CARD_SUIT,
+                            NE,
+                            GET_GRAB_CARD_OR_255,
+                            GET_CARD_NUM,
+                            GET_GRAB_CARD_OR_255,
+                            GET_CARD_NUM,
+                            GET_DROP_CARD_OR_255,
+                            GET_CARD_NUM,
+                            LITERAL,
+                            1,
+                            SUB,
+                            EQ,
+                            AND,
+                            AND,
                             JUMP,
                             9,
                             GET_CELL_LEN, //A
