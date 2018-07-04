@@ -1,4 +1,7 @@
-use common::{getcardnum, getsuit, movecards, GameState, MOVE_TIMER_MAX};
+use common::{
+    cangrab, canmovedragons, getcardnum, getselection, getsuit, movecards, movedragons, GameState,
+    MOVE_TIMER_MAX,
+};
 
 pub mod instructions {
     pub const NO_OP: u8 = 0;
@@ -59,6 +62,9 @@ pub mod instructions {
 
     pub const LITERAL: u8 = 0b101010;
     pub const FORGET: u8 = LITERAL | 1;
+
+    pub const CAN_GRAB: u8 = 0b1110_0000;
+    pub const HANDLE_BUTTON_PRESS: u8 = 0b1110_0001;
 
     pub const ASSERT_EMPTY_STACK: u8 = 0b1111_0000;
 
@@ -263,6 +269,23 @@ impl GameState {
             }
             FILL_MOVE_TIMER => {
                 self.movetimer = MOVE_TIMER_MAX;
+            }
+            CAN_GRAB => {
+                let output = if cangrab(&self.cells, self.selectpos, self.selectdepth) {
+                    255
+                } else {
+                    0
+                };
+
+                console!(log, output);
+
+                self.vm.push(output);
+            }
+            HANDLE_BUTTON_PRESS => {
+                if canmovedragons(self, self.selectdepth) {
+                    movedragons(self);
+                    self.interpret(&[DROP, FILL_MOVE_TIMER]);
+                }
             }
             ASSERT_EMPTY_STACK => {
                 assert!(self.vm.is_empty(), "ASSERT_EMPTY_STACK failed!");

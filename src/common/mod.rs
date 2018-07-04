@@ -107,3 +107,111 @@ pub fn getsuit(card: u8) -> u8 {
 pub fn getcardnum(card: u8) -> u8 {
     card - (getsuit(card) * 10)
 }
+
+pub fn canmovedragons(state: &GameState, suit: u8) -> bool {
+    let mut count = 0;
+    for i in 0..=CELLS_MAX_INDEX {
+        let i = i as usize;
+        if state.cells[i].len() > 0 && last_unchecked!(state.cells[i]) == suit * 10 {
+            count += 1;
+        }
+    }
+
+    if count < 4 {
+        return false;
+    }
+
+    for i in 0..BUTTON_COLUMN {
+        let i = i as usize;
+        if state.cells[i].len() == 0 || last_unchecked!(state.cells[i]) == suit * 10 {
+            return true;
+        }
+    }
+    return false;
+}
+
+pub fn movedragons(state: &mut GameState) {
+    let suit = state.selectdepth;
+    let mut moveto = None;
+
+    for i in 0..BUTTON_COLUMN {
+        let i = i as usize;
+        if state.cells[i].len() != 0
+            && last_unchecked!(state.cells[i]) == suit * 10
+            && moveto.is_none()
+        {
+            moveto = Some(i);
+        }
+    }
+    if moveto.is_none() {
+        for i in 0..BUTTON_COLUMN {
+            let i = i as usize;
+            if state.cells[i].len() == 0 {
+                moveto = Some(i);
+                break;
+            }
+        }
+    }
+
+    for i in 0..=CELLS_MAX_INDEX {
+        let i = i as usize;
+        if state.cells[i].len() != 0 && last_unchecked!(state.cells[i]) == suit * 10 {
+            state.cells[i].pop();
+        }
+    }
+
+    if let Some(moveto) = moveto {
+        let moveto = moveto as usize;
+        state.cells[moveto].push(CARD_BACK);
+    }
+}
+
+pub fn cangrab(cells: &Cells, pos: u8, depth: u8) -> bool {
+    let selection = getselection(cells, pos, depth);
+    if selection.len() == 0 || (pos >= FLOWER_FOUNDATION && pos < START_OF_TABLEAU) {
+        return false;
+    }
+
+    let mut lastsuit = 255;
+    let mut lastnum = 255;
+    let mut first = true;
+
+    for &card in selection.iter() {
+        if card == CARD_BACK {
+            return false;
+        }
+
+        let suit = getsuit(card);
+        let num = getcardnum(card);
+
+        if !first {
+            if suit == lastsuit || num == 0 || num != lastnum - 1 {
+                return false;
+            }
+        }
+        lastsuit = suit;
+        lastnum = num;
+        first = false;
+    }
+
+    return true;
+}
+
+pub fn getselection(cells: &Cells, pos: u8, depth: u8) -> Vec<u8> {
+    let pos = pos as usize;
+    let depth = depth as usize;
+
+    let len = cells[pos].len();
+    if len == 0 {
+        return Vec::new();
+    }
+
+    let mut output = Vec::with_capacity(depth);
+
+    for i in 1..=depth + 1 {
+        let index = len - (depth + 1) + i - 1;
+        output.push(cells[pos][index]);
+    }
+
+    return output;
+}

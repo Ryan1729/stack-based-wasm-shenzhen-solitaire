@@ -226,240 +226,139 @@ fn update(state: &mut GameState, input: Input) {
                 ]);
             } else if input.pressed_this_frame(Button::A) {
                 if state.selectpos == BUTTON_COLUMN {
-                    if canmovedragons(state, state.selectdepth) {
-                        movedragons(state);
-                        state.interpret(&[DROP, FILL_MOVE_TIMER]);
-                    }
+                    state.interpret(&[HANDLE_BUTTON_PRESS]);
                 } else {
-                    if state.selectdrop {
-                        state.interpret(&[
-                            GET_GRAB_CARD_OR_255,
-                            LITERAL,
-                            255,
-                            NE_BRANCH,
-                            1,
-                            HALT,
-                            GET_SELECT_POS,
-                            LITERAL,
-                            BUTTON_COLUMN,
-                            LT_BRANCH,
-                            82, //A
-                            GET_SELECT_POS,
-                            LITERAL,
-                            FLOWER_FOUNDATION,
-                            GT_BRANCH,
-                            1,
-                            HALT,
-                            GET_SELECT_POS,
-                            LITERAL,
-                            START_OF_FOUNDATIONS,
-                            LT,
-                            GET_SELECT_POS,
-                            LITERAL,
-                            START_OF_TABLEAU,
-                            GE,
-                            OR,
-                            IF,
-                            40, //B
-                            GET_GRAB_DEPTH,
-                            NOT,
-                            IF,
-                            1,
-                            HALT,
-                            GET_CELL_LEN,
-                            IF,
-                            7,
-                            GET_GRAB_CARD_OR_255,
-                            GET_CARD_NUM,
-                            LITERAL,
-                            1,
-                            EQ,
-                            JUMP,
-                            59, //END
-                            GET_DROP_CARD_OR_255,
-                            LITERAL,
-                            255,
-                            NE_BRANCH,
-                            1,
-                            HALT,
-                            GET_GRAB_CARD_OR_255,
-                            GET_CARD_SUIT,
-                            GET_DROP_CARD_OR_255,
-                            GET_CARD_SUIT,
-                            EQ,
-                            GET_GRAB_CARD_OR_255,
-                            GET_CARD_NUM,
-                            GET_GRAB_CARD_OR_255,
-                            GET_CARD_NUM,
-                            GET_DROP_CARD_OR_255,
-                            GET_CARD_NUM,
-                            LITERAL,
-                            1,
-                            ADD,
-                            EQ,
-                            AND,
-                            AND,
-                            JUMP,
-                            34, //END
-                            GET_DROP_CARD_OR_255, //B
-                            LITERAL,
-                            255,
-                            NE_BRANCH,
-                            1,
-                            HALT,
-                            GET_GRAB_CARD_OR_255,
-                            GET_CARD_SUIT,
-                            GET_DROP_CARD_OR_255,
-                            GET_CARD_SUIT,
-                            NE,
-                            GET_GRAB_CARD_OR_255,
-                            GET_CARD_NUM,
-                            GET_GRAB_CARD_OR_255,
-                            GET_CARD_NUM,
-                            GET_DROP_CARD_OR_255,
-                            GET_CARD_NUM,
-                            LITERAL,
-                            1,
-                            SUB,
-                            EQ,
-                            AND,
-                            AND,
-                            JUMP,
-                            9,
-                            GET_CELL_LEN, //A
-                            LITERAL,
-                            0,
-                            EQ,
-                            GET_GRAB_DEPTH,
-                            LITERAL,
-                            0,
-                            EQ,
-                            AND,
-                            IF, //END
-                            1,
-                            HALT,
-                            GET_GRAB_POS,
-                            GET_GRAB_DEPTH,
-                            GET_SELECT_POS,
-                            MOVE_CARDS,
-                            DROP,
-                            FILL_MOVE_TIMER
-                        ]);
-                    } else if cangrab(&state.cells, state.selectpos, state.selectdepth) {
-                        state.interpret(&[
-                            GET_SELECT_POS,
-                            SET_GRAB_POS,
-                            GET_SELECT_DEPTH,
-                            SET_GRAB_DEPTH,
-                            GRAB,
-                        ]);
-                    }
+                    state.interpret(&[
+                        GET_SELECT_DROP,
+                        IF,
+                        10,
+                        CAN_GRAB,
+                        IF,
+                        1,
+                        HALT,
+                        GET_SELECT_POS,
+                        SET_GRAB_POS,
+                        GET_SELECT_DEPTH,
+                        SET_GRAB_DEPTH,
+                        GRAB,
+                        HALT,
+                        GET_GRAB_CARD_OR_255,
+                        LITERAL,
+                        255,
+                        NE_BRANCH,
+                        1,
+                        HALT,
+                        GET_SELECT_POS,
+                        LITERAL,
+                        BUTTON_COLUMN,
+                        LT_BRANCH,
+                        82, //A
+                        GET_SELECT_POS,
+                        LITERAL,
+                        FLOWER_FOUNDATION,
+                        GT_BRANCH,
+                        1,
+                        HALT,
+                        GET_SELECT_POS,
+                        LITERAL,
+                        START_OF_FOUNDATIONS,
+                        LT,
+                        GET_SELECT_POS,
+                        LITERAL,
+                        START_OF_TABLEAU,
+                        GE,
+                        OR,
+                        IF,
+                        40, //B
+                        GET_GRAB_DEPTH,
+                        NOT,
+                        IF,
+                        1,
+                        HALT,
+                        GET_CELL_LEN,
+                        IF,
+                        7,
+                        GET_GRAB_CARD_OR_255,
+                        GET_CARD_NUM,
+                        LITERAL,
+                        1,
+                        EQ,
+                        JUMP,
+                        59, //END
+                        GET_DROP_CARD_OR_255,
+                        LITERAL,
+                        255,
+                        NE_BRANCH,
+                        1,
+                        HALT,
+                        GET_GRAB_CARD_OR_255,
+                        GET_CARD_SUIT,
+                        GET_DROP_CARD_OR_255,
+                        GET_CARD_SUIT,
+                        EQ,
+                        GET_GRAB_CARD_OR_255,
+                        GET_CARD_NUM,
+                        GET_GRAB_CARD_OR_255,
+                        GET_CARD_NUM,
+                        GET_DROP_CARD_OR_255,
+                        GET_CARD_NUM,
+                        LITERAL,
+                        1,
+                        ADD,
+                        EQ,
+                        AND,
+                        AND,
+                        JUMP,
+                        34, //END
+                        GET_DROP_CARD_OR_255, //B
+                        LITERAL,
+                        255,
+                        NE_BRANCH,
+                        1,
+                        HALT,
+                        GET_GRAB_CARD_OR_255,
+                        GET_CARD_SUIT,
+                        GET_DROP_CARD_OR_255,
+                        GET_CARD_SUIT,
+                        NE,
+                        GET_GRAB_CARD_OR_255,
+                        GET_CARD_NUM,
+                        GET_GRAB_CARD_OR_255,
+                        GET_CARD_NUM,
+                        GET_DROP_CARD_OR_255,
+                        GET_CARD_NUM,
+                        LITERAL,
+                        1,
+                        SUB,
+                        EQ,
+                        AND,
+                        AND,
+                        JUMP,
+                        9,
+                        GET_CELL_LEN, //A
+                        LITERAL,
+                        0,
+                        EQ,
+                        GET_GRAB_DEPTH,
+                        LITERAL,
+                        0,
+                        EQ,
+                        AND,
+                        IF, //END
+                        1,
+                        HALT,
+                        GET_GRAB_POS,
+                        GET_GRAB_DEPTH,
+                        GET_SELECT_POS,
+                        MOVE_CARDS,
+                        DROP,
+                        FILL_MOVE_TIMER
+                    ]);
                 }
             } else if input.pressed_this_frame(Button::B) {
                 state.interpret(&[DROP]);
             }
         }
-    }
-}
-
-fn getselection(cells: &Cells, pos: u8, depth: u8) -> Vec<u8> {
-    let pos = pos as usize;
-    let depth = depth as usize;
-
-    let mut output = Vec::with_capacity(depth);
-    for i in 1..=depth + 1 {
-        let index = cells[pos].len() - (depth + 1) + i - 1;
-        output.push(cells[pos][index]);
-    }
-    return output;
-}
-
-fn cangrab(cells: &Cells, pos: u8, depth: u8) -> bool {
-    let selection = getselection(cells, pos, depth);
-    if selection.len() == 0 || (pos >= FLOWER_FOUNDATION && pos < START_OF_TABLEAU) {
-        return false;
-    }
-
-    let mut lastsuit = 255;
-    let mut lastnum = 255;
-    let mut first = true;
-
-    for &card in selection.iter() {
-        if card == CARD_BACK {
-            return false;
-        }
-
-        let suit = getsuit(card);
-        let num = getcardnum(card);
-
-        if !first {
-            if suit == lastsuit || num == 0 || num != lastnum - 1 {
-                return false;
-            }
-        }
-        lastsuit = suit;
-        lastnum = num;
-        first = false;
-    }
-
-    return true;
-}
-
-fn canmovedragons(state: &GameState, suit: u8) -> bool {
-    let mut count = 0;
-    for i in 0..=CELLS_MAX_INDEX {
-        let i = i as usize;
-        if state.cells[i].len() > 0 && last_unchecked!(state.cells[i]) == suit * 10 {
-            count += 1;
-        }
-    }
-
-    if count < 4 {
-        return false;
-    }
-
-    for i in 0..BUTTON_COLUMN {
-        let i = i as usize;
-        if state.cells[i].len() == 0 || last_unchecked!(state.cells[i]) == suit * 10 {
-            return true;
-        }
-    }
-    return false;
-}
-
-fn movedragons(state: &mut GameState) {
-    let suit = state.selectdepth;
-    let mut moveto = None;
-
-    for i in 0..BUTTON_COLUMN {
-        let i = i as usize;
-        if state.cells[i].len() != 0
-            && last_unchecked!(state.cells[i]) == suit * 10
-            && moveto.is_none()
-        {
-            moveto = Some(i);
-        }
-    }
-    if moveto.is_none() {
-        for i in 0..BUTTON_COLUMN {
-            let i = i as usize;
-            if state.cells[i].len() == 0 {
-                moveto = Some(i);
-                break;
-            }
-        }
-    }
-
-    for i in 0..=CELLS_MAX_INDEX {
-        let i = i as usize;
-        if state.cells[i].len() != 0 && last_unchecked!(state.cells[i]) == suit * 10 {
-            state.cells[i].pop();
-        }
-    }
-
-    if let Some(moveto) = moveto {
-        let moveto = moveto as usize;
-        state.cells[moveto].push(CARD_BACK);
     }
 }
 
