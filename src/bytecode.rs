@@ -277,8 +277,6 @@ impl GameState {
                     0
                 };
 
-                console!(log, output);
-
                 self.vm.push(output);
             }
             HANDLE_BUTTON_PRESS => {
