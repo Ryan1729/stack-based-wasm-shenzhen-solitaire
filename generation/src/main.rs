@@ -1,5 +1,6 @@
 extern crate project_common;
 use project_common::vm::instructions::*;
+use project_common::GameState;
 
 extern crate rand;
 use rand::{
@@ -73,6 +74,36 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
     output
 }
 
+#[cfg(test)]
+#[macro_use]
+extern crate quickcheck;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn logger(s: &str) {
+        println!("{}", s);
+    }
+
+    quickcheck!{
+        fn does_not_over_or_underflow(pre_seed: (u64, u64)) -> bool {
+            let seed = unsafe { std::mem::transmute(pre_seed) };
+
+            let mut rng = XorShiftRng::from_seed(seed);
+
+            let insructions = generate(&mut rng, 100);
+
+            let mut game_state = GameState::new([0; 16], Some(logger));
+
+            game_state.interpret(&insructions);
+
+            //didn't panic
+            true
+        }
+    }
+}
+
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 fn main() {
@@ -97,7 +128,7 @@ fn main() {
 
                 //The most significant 32 bits change too rarely to be useful.
                 let seconds: u32 = since_the_epoch.as_secs() as u32;
-                let mut nanos: u32 = since_the_epoch.subsec_nanos();
+                let nanos: u32 = since_the_epoch.subsec_nanos();
 
                 let result = [seconds, nanos, seconds, nanos];
 

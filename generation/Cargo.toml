@@ -6,3 +6,6 @@ authors = ["Ryan1729 <Ryan1729@gmail.com>"]
 [dependencies]
 rand = "0.5.3"
 project_common = { path = "../project_common" }
+
+[dev-dependencies]
+quickcheck = "0.6"
