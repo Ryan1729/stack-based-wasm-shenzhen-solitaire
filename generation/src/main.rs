@@ -1,6 +1,11 @@
 extern crate project_common;
 use project_common::vm::instructions::*;
 
+extern crate rand;
+use rand::{
+    distributions::{Distribution, Standard, Uniform}, Rng, SeedableRng, XorShiftRng,
+};
+
 const INSTRUCTION_POOL: [u8; 48] = [
     NO_OP,
     FILL_MOVE_TIMER,
@@ -52,10 +57,21 @@ const INSTRUCTION_POOL: [u8; 48] = [
     HALT,
 ];
 
-extern crate rand;
-use rand::{
-    distributions::{Distribution, Standard, Uniform}, Rng, SeedableRng, XorShiftRng,
-};
+fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
+    let range = Uniform::from(0..INSTRUCTION_POOL.len());
+
+    let mut output = Vec::new();
+
+    for _ in 0..count {
+        let index = range.sample(rng);
+
+        let instruction = INSTRUCTION_POOL[index];
+
+        output.push(instruction)
+    }
+
+    output
+}
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -79,9 +95,11 @@ fn main() {
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_else(|_| Duration::new(42, 42));
 
-                let seconds: [u32; 2] = unsafe { std::mem::transmute(since_the_epoch.as_secs()) };
+                //The most significant 32 bits change too rarely to be useful.
+                let seconds: u32 = since_the_epoch.as_secs() as u32;
+                let mut nanos: u32 = since_the_epoch.subsec_nanos();
 
-                let result = [seconds[0], seconds[1], seconds[0], seconds[1]];
+                let result = [seconds, nanos, seconds, nanos];
 
                 unsafe { std::mem::transmute(result) }
             })
@@ -96,12 +114,8 @@ fn main() {
     output.push('[');
     output.push('\n');
 
-    let range = Uniform::from(0..INSTRUCTION_POOL.len());
-    for _ in 0..100 {
-        let index = range.sample(&mut rng);
-
-        let instruction = INSTRUCTION_POOL[index];
-
+    let instructions = generate(&mut rng, 100);
+    for instruction in instructions.iter() {
         output.push_str(&format!("    {},\n", instruction));
     }
 
