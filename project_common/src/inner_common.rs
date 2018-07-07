@@ -40,6 +40,7 @@ pub const CARD_BACK: u8 = 31;
 
 pub type Cells = [Vec<u8>; CELLS_MAX_INDEX as usize + 1];
 
+use rand::XorShiftRng;
 use vm::VM;
 
 pub struct GameState {
@@ -53,6 +54,7 @@ pub struct GameState {
     pub grabdepth: u8,
     pub movetimer: u8,
     pub vm: VM,
+    pub rng: XorShiftRng,
 }
 
 pub const GFX_WIDTH: usize = 128;

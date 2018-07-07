@@ -4,9 +4,5 @@ version = "0.1.0"
 authors = ["Ryan1729 <Ryan1729@gmail.com>"]
 
 [dependencies]
-serde = "1"
-serde_derive = "1"
 bitflags = "0.7"
-quickcheck = "0.6"
-stdweb = "0.4"
-rand = "0.4"
+rand = "0.5.3"

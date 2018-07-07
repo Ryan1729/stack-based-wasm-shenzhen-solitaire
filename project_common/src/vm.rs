@@ -1,8 +1,11 @@
 use *;
 
+pub type Logger = Option<fn(&str) -> ()>;
+
 pub struct VM {
     stack_pointer: usize,
     stack: [u8; VM::STACK_SIZE],
+    pub logger: Logger,
 }
 
 use std::fmt;
@@ -26,28 +29,33 @@ impl fmt::Display for VM {
     }
 }
 
-impl Default for VM {
-    fn default() -> Self {
+impl VM {
+    pub fn new(logger: Logger) -> Self {
         VM {
             stack_pointer: usize::max_value(),
             stack: [0; VM::STACK_SIZE],
+            logger,
         }
     }
 }
 
-macro_rules! console_assert {
-    ($boolean:expr, $message:expr) => {
-        if !($boolean) {
-            console!(error, $message);
-        }
-    };
+pub fn log(logger: Logger, s: &str) {
+    if let Some(l) = logger {
+        l(s);
+    }
+}
+
+pub fn log_assert(logger: Logger, is_fine: bool, s: &str) {
+    if !is_fine {
+        log(logger, s);
+    }
 }
 
 impl VM {
     pub const STACK_SIZE: usize = 128;
 
     pub fn pop(&mut self) -> u8 {
-        console_assert!(!self.is_empty(), "stack underflow!");
+        log_assert(self.logger, !self.is_empty(), "stack underflow!");
 
         let output = self.stack[self.stack_pointer];
 
@@ -59,7 +67,7 @@ impl VM {
     pub fn push(&mut self, byte: u8) {
         self.stack_pointer = self.stack_pointer.wrapping_add(1);
 
-        console_assert!(!self.is_empty(), "stack overflow!");
+        log_assert(self.logger, !self.is_empty(), "stack overflow!");
 
         self.stack[self.stack_pointer] = byte;
     }
@@ -187,7 +195,7 @@ impl GameState {
         }
 
         if cfg!(debug_assertions) || true {
-            console!(log, format!("{}", self.vm));
+            log(self.vm.logger, &format!("{}", self.vm));
         }
 
         match instruction {

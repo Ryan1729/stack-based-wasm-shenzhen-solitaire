@@ -342,12 +342,27 @@ pub struct State {
     pub input: Input,
 }
 
+fn logger(s: &str) {
+    console!(log, s);
+}
+
+use std::mem;
+use stdweb::web::Date;
+
 impl State {
     pub fn new() -> State {
         let framebuffer = Framebuffer::new();
 
+        let seed = unsafe {
+            let time = Date::new().get_time();
+
+            mem::transmute::<[f64; 2], [u8; 16]>([time, 1.0 / time])
+        };
+
+        logger(&format!("{:?}", seed));
+
         State {
-            game_state: GameState::new(),
+            game_state: GameState::new(seed, Some(logger)),
             framebuffer,
             input: Input::new(),
         }

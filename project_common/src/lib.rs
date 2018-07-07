@@ -1,3 +1,6 @@
+#![allow(non_upper_case_globals)]
+#![allow(non_snake_case)]
+
 macro_rules! last_unchecked {
     ($vec:expr) => {
         $vec[$vec.len() - 1]
@@ -5,10 +8,9 @@ macro_rules! last_unchecked {
 }
 
 #[macro_use]
-extern crate stdweb;
-
-#[macro_use]
 extern crate bitflags;
+
+extern crate rand;
 
 pub mod inner_common;
 pub use inner_common::*;

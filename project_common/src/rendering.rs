@@ -131,10 +131,6 @@ impl Framebuffer {
     //see http://members.chello.at/~easyfilter/bresenham.html
     pub fn draw_crisp_circle(&mut self, xMid: usize, yMid: usize, radius: usize, colour: u32) {
         if xMid < radius || yMid < radius {
-            if cfg!(debug_assertions) {
-                console!(log, "draw_crisp_circle xMid < radius || yMid < radius");
-            }
-
             return;
         }
         let mut r = radius as isize;
@@ -194,10 +190,6 @@ impl Framebuffer {
     //see http://members.chello.at/easyfilter/bresenham.c
     pub fn draw_circle(&mut self, xMid: usize, yMid: usize, radius: usize, colour: u32) {
         if xMid < radius || yMid < radius {
-            if cfg!(debug_assertions) {
-                console!(log, "draw_circle xMid < radius || yMid < radius");
-            }
-
             return;
         }
         let xm = xMid as isize;
@@ -274,10 +266,6 @@ impl Framebuffer {
 
     pub fn draw_filled_circle(&mut self, xMid: usize, yMid: usize, radius: usize, colour: u32) {
         if xMid < radius || yMid < radius {
-            if cfg!(debug_assertions) {
-                console!(log, "draw_filled_circle xMid < radius || yMid < radius");
-            }
-
             return;
         }
         let xm = xMid as isize;

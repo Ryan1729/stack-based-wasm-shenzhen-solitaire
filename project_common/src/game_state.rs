@@ -1,15 +1,13 @@
 extern crate rand;
 
 use self::rand::{Rng, SeedableRng};
-use std::mem;
-use stdweb::web::Date;
 
 use inner_common::*;
 
 use vm::VM;
 
 impl GameState {
-    pub fn new() -> GameState {
+    pub fn new(seed: [u8; 16], logger: Option<fn(&str) -> ()>) -> GameState {
         let mut cells: [Vec<u8>; 16] = Default::default();
 
         let mut deck = Vec::with_capacity(3 * (START_OF_TABLEAU as usize + 4) + 1);
@@ -28,18 +26,6 @@ impl GameState {
 
         deck.push(30);
 
-        let seed = unsafe {
-            let time = Date::new().get_time();
-
-            mem::transmute::<[f64; 2], [u32; 4]>([time, 1.0 / time])
-            //known non-autoplay seed
-            //[593227776, 1115044417, 342636230, 1030162643]
-
-            //known autoplay seed
-            //[614731776, 1115044419, 8528335, 1030162641]
-        };
-
-        console!(log, format!("{:?}", seed));
         let mut rng = rand::XorShiftRng::from_seed(seed);
 
         let mut deckpos = START_OF_TABLEAU;
@@ -64,7 +50,16 @@ impl GameState {
             grabpos: 1,
             grabdepth: 0,
             movetimer: 0,
-            vm: VM::default(),
+            vm: VM::new(logger),
+            rng,
         }
+    }
+
+    pub fn reset(&mut self) {
+        let logger = self.vm.logger.take();
+
+        let new_seed = self.rng.gen();
+
+        *self = GameState::new(new_seed, logger);
     }
 }

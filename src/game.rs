@@ -15,7 +15,7 @@ fn update(state: &mut GameState, input: Input) {
             if input.pressed_this_frame(Button::Start) {
                 let wins = state.wins;
 
-                *state = GameState::new();
+                state.reset();
 
                 state.wins = wins;
             }
