@@ -1,5 +1,11 @@
-use bytecode::instructions::*;
-use common::*;
+use project_common::inner_common::*;
+use project_common::*;
+
+macro_rules! last_unchecked {
+    ($vec:expr) => {
+        $vec[$vec.len() - 1]
+    };
+}
 
 use std::cmp::{max, min};
 
@@ -313,7 +319,7 @@ fn update(state: &mut GameState, input: Input) {
                     AND,
                     AND,
                     JUMP,
-                    37, //END
+                    37,                   //END
                     GET_DROP_CARD_OR_255, //B
                     LITERAL,
                     255,
@@ -322,7 +328,7 @@ fn update(state: &mut GameState, input: Input) {
                     LITERAL,
                     255,
                     JUMP,
-                    28,// END
+                    28, // END
                     GET_GRAB_CARD_OR_255,
                     GET_CARD_SUIT,
                     GET_DROP_CARD_OR_255,
@@ -359,7 +365,7 @@ fn update(state: &mut GameState, input: Input) {
                     GET_SELECT_POS,
                     MOVE_CARDS,
                     DROP,
-                    FILL_MOVE_TIMER
+                    FILL_MOVE_TIMER,
                 ]);
             } else if input.pressed_this_frame(Button::B) {
                 state.interpret(&[DROP]);

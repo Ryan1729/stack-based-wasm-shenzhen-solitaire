@@ -74,7 +74,7 @@ pub mod instructions {
 }
 pub use self::instructions::*;
 
-const INSTRUCTIONS: [u8; 48] = [
+const INSTRUCTION_POOL: [u8; 48] = [
     NO_OP,
     FILL_MOVE_TIMER,
     GRAB,
@@ -169,11 +169,11 @@ fn main() {
     output.push('[');
     output.push('\n');
 
-    let range = Uniform::from(0..INSTRUCTIONS.len());
+    let range = Uniform::from(0..INSTRUCTION_POOL.len());
     for _ in 0..100 {
         let index = range.sample(&mut rng);
 
-        let instruction = INSTRUCTIONS[index];
+        let instruction = INSTRUCTION_POOL[index];
 
         output.push_str(&format!("    {},\n", instruction));
     }

@@ -3,10 +3,10 @@
 #![allow(non_snake_case)]
 
 #[macro_use]
-extern crate bitflags;
-
-#[macro_use]
 extern crate stdweb;
+
+extern crate project_common;
+use project_common::*;
 
 use std::cell::RefCell;
 use std::error::Error;
@@ -17,14 +17,8 @@ use stdweb::web::{self, Element, IElement, IEventTarget, INode, INonElementParen
 
 use stdweb::{UnsafeTypedArray, Value};
 
-#[macro_use]
-mod common;
-use common::*;
-
 mod game;
 use game::update_and_render;
-
-mod bytecode;
 
 macro_rules! enclose {
     ( [$( $x:ident ),*] $y:expr ) => {
@@ -338,6 +332,24 @@ impl PinkyWeb {
             self.state.press(button);
         } else {
             self.state.release(button);
+        }
+    }
+}
+
+pub struct State {
+    pub game_state: GameState,
+    pub framebuffer: Framebuffer,
+    pub input: Input,
+}
+
+impl State {
+    pub fn new() -> State {
+        let framebuffer = Framebuffer::new();
+
+        State {
+            game_state: GameState::new(),
+            framebuffer,
+            input: Input::new(),
         }
     }
 }

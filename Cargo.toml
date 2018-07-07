@@ -10,7 +10,7 @@ bitflags = "0.7"
 quickcheck = "0.6"
 stdweb = "0.4"
 rand = "0.4"
-
+project_common = { path = "./project_common" }
 
 [profile.dev]
 opt-level = 2

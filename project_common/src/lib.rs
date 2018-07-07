@@ -1,39 +1,27 @@
-pub mod rendering;
-pub use rendering::draw_winning_screen;
-pub use rendering::Framebuffer;
-
-pub mod inner_common;
-pub use inner_common::*;
-
-pub mod game_state;
-pub use game_state::*;
-
-pub mod vm;
-pub use vm::*;
-
 macro_rules! last_unchecked {
     ($vec:expr) => {
         $vec[$vec.len() - 1]
     };
 }
 
-pub struct State {
-    pub game_state: GameState,
-    pub framebuffer: Framebuffer,
-    pub input: Input,
-}
+#[macro_use]
+extern crate stdweb;
 
-impl State {
-    pub fn new() -> State {
-        let framebuffer = Framebuffer::new();
+#[macro_use]
+extern crate bitflags;
 
-        State {
-            game_state: GameState::new(),
-            framebuffer,
-            input: Input::new(),
-        }
-    }
-}
+pub mod inner_common;
+pub use inner_common::*;
+
+pub mod rendering;
+pub use rendering::draw_winning_screen;
+pub use rendering::Framebuffer;
+
+pub mod game_state;
+pub use game_state::*;
+
+pub mod vm;
+pub use vm::*;
 
 #[derive(Clone, Copy, Default, Debug)]
 pub struct Input {
