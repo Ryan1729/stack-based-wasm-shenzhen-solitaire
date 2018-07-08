@@ -99,6 +99,10 @@ pub fn getcardnum(card: u8) -> u8 {
 }
 
 pub fn canmovedragons(state: &GameState, suit: u8) -> bool {
+    if suit >= 3 {
+        return false;
+    }
+
     let mut count = 0;
     for i in 0..=CELLS_MAX_INDEX {
         let i = i as usize;

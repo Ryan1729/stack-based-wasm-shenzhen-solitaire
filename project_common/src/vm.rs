@@ -413,7 +413,7 @@ impl GameState {
                 let cells = &self.cells;
 
                 let len = cells[grabpos].len();
-                let output = if len < grabdepth {
+                let output = if len == 0 || len - 1 < grabdepth {
                     255
                 } else {
                     cells[grabpos][len - 1 - grabdepth]

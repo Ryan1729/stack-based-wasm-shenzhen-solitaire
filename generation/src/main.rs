@@ -58,17 +58,92 @@ const INSTRUCTION_POOL: [u8; 48] = [
     HALT,
 ];
 
+const ZERO_PARAM_INSTRUCTION_POOL: [u8; 16] = [
+    NO_OP,
+    FILL_MOVE_TIMER,
+    GRAB,
+    DROP,
+    JUMP,
+    GET_SELECT_POS,
+    GET_SELECT_DEPTH,
+    GET_GRAB_POS,
+    GET_GRAB_DEPTH,
+    LITERAL,
+    CAN_GRAB,
+    GET_GRAB_CARD_OR_255,
+    GET_DROP_CARD_OR_255,
+    GET_SELECT_DROP,
+    GET_CELL_LEN,
+    HANDLE_BUTTON_PRESS
+    //Leaving these out on purpose.
+    //ASSERT_EMPTY_STACK,
+    //HALT,
+];
+
+const ONE_PARAM_INSTRUCTION_POOL: [u8; 9] = [
+    NOT,
+    IF,
+    FORGET,
+    SET_SELECT_POS,
+    SET_SELECT_DEPTH,
+    SET_GRAB_POS,
+    SET_GRAB_DEPTH,
+    GET_CARD_NUM,
+    GET_CARD_SUIT,
+];
+
+const TWO_PARAM_INSTRUCTION_POOL: [u8; 20] = [
+    ADD, SUB, MUL, DIV, MAX, MIN, AND, OR, EQ_BRANCH, NE_BRANCH, GT_BRANCH, GE_BRANCH, LT_BRANCH,
+    LE_BRANCH, EQ, NE, GT, GE, LT, LE,
+];
+
+const THREE_PARAM_INSTRUCTION_POOL: [u8; 1] = [MOVE_CARDS];
+
 fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
-    let range = Uniform::from(0..INSTRUCTION_POOL.len());
+    let full_range = Uniform::from(0..INSTRUCTION_POOL.len());
+    let zero_range = Uniform::from(0..ZERO_PARAM_INSTRUCTION_POOL.len());
+    let one_range = Uniform::from(0..ONE_PARAM_INSTRUCTION_POOL.len());
+    let two_range = Uniform::from(0..TWO_PARAM_INSTRUCTION_POOL.len());
+
+    let zero_to_three = Uniform::from(0..4);
 
     let mut output = Vec::new();
 
+    let mut stack_depth = 0;
     for _ in 0..count {
-        let index = range.sample(rng);
+        let instruction = match stack_depth {
+            0 => ZERO_PARAM_INSTRUCTION_POOL[zero_range.sample(rng)],
+            1 => if rng.gen() {
+                ONE_PARAM_INSTRUCTION_POOL[one_range.sample(rng)]
+            } else {
+                ZERO_PARAM_INSTRUCTION_POOL[zero_range.sample(rng)]
+            },
+            2 => match zero_to_three.sample(rng) {
+                0 => ZERO_PARAM_INSTRUCTION_POOL[zero_range.sample(rng)],
+                1 => ONE_PARAM_INSTRUCTION_POOL[one_range.sample(rng)],
+                2 => TWO_PARAM_INSTRUCTION_POOL[two_range.sample(rng)],
+                _ => MOVE_CARDS,
+            },
+            _ => INSTRUCTION_POOL[full_range.sample(rng)],
+        };
 
-        let instruction = INSTRUCTION_POOL[index];
+        output.push(instruction);
 
-        output.push(instruction)
+        match instruction {
+            GET_SELECT_POS | GET_SELECT_DEPTH | GET_GRAB_POS | GET_GRAB_DEPTH | LITERAL
+            | CAN_GRAB | GET_GRAB_CARD_OR_255 | GET_DROP_CARD_OR_255 | GET_SELECT_DROP
+            | GET_CELL_LEN => {
+                stack_depth += 1;
+            }
+            IF | FORGET | SET_SELECT_POS | SET_SELECT_DEPTH | SET_GRAB_POS | SET_GRAB_DEPTH => {
+                stack_depth -= 1;
+            }
+            ADD | SUB | MUL | DIV | MAX | MIN | AND | OR | EQ_BRANCH | NE_BRANCH | GT_BRANCH
+            | GE_BRANCH | LT_BRANCH | LE_BRANCH | EQ | NE | GT | GE | LT | LE => {
+                stack_depth -= 2;
+            }
+            _ => {}
+        }
     }
 
     output
