@@ -1,5 +1,6 @@
 extern crate project_common;
 use project_common::vm::instructions::*;
+use project_common::vm::PrettyInstruction;
 use project_common::GameState;
 
 extern crate rand;
@@ -105,7 +106,7 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
     let one_range = Uniform::from(0..ONE_PARAM_INSTRUCTION_POOL.len());
     let two_range = Uniform::from(0..TWO_PARAM_INSTRUCTION_POOL.len());
 
-    let zero_to_three = Uniform::from(0..4);
+    let zero_to_two = Uniform::from(0..3);
 
     let mut output = Vec::new();
 
@@ -118,11 +119,10 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
             } else {
                 ZERO_PARAM_INSTRUCTION_POOL[zero_range.sample(rng)]
             },
-            2 => match zero_to_three.sample(rng) {
+            2 => match zero_to_two.sample(rng) {
                 0 => ZERO_PARAM_INSTRUCTION_POOL[zero_range.sample(rng)],
                 1 => ONE_PARAM_INSTRUCTION_POOL[one_range.sample(rng)],
-                2 => TWO_PARAM_INSTRUCTION_POOL[two_range.sample(rng)],
-                _ => MOVE_CARDS,
+                _ => TWO_PARAM_INSTRUCTION_POOL[two_range.sample(rng)],
             },
             _ => INSTRUCTION_POOL[full_range.sample(rng)],
         };
@@ -159,6 +159,37 @@ mod tests {
 
     fn logger(s: &str) {
         println!("{}", s);
+    }
+
+    #[test]
+    fn jump_at_the_end_does_not_crash() {
+        let mut game_state = GameState::new([0; 16], None);
+
+        game_state.interpret(&[JUMP]);
+    }
+
+    #[test]
+    fn jump_past_the_end_does_not_crash() {
+        let mut game_state = GameState::new([0; 16], None);
+
+        game_state.interpret(&[JUMP, 255]);
+    }
+
+    #[test]
+    fn dissect() {
+        let seed = unsafe { std::mem::transmute((55u64, 4u64)) };
+
+        let mut rng = XorShiftRng::from_seed(seed);
+
+        let insructions = generate(&mut rng, 100);
+
+        let pretty_instructions: Vec<_> =
+            insructions.iter().map(|&b| PrettyInstruction(b)).collect();
+        logger(&format!("insructions: {:?}", &pretty_instructions));
+
+        let mut game_state = GameState::new([0; 16], Some(logger));
+
+        game_state.interpret(&insructions);
     }
 
     quickcheck!{

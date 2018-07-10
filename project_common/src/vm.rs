@@ -179,9 +179,15 @@ pub mod instructions {
 }
 pub use self::instructions::*;
 
-struct PrettyInstruction(u8);
+pub struct PrettyInstruction(pub u8);
 
 impl fmt::Display for PrettyInstruction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", instruction_name(self.0))
+    }
+}
+
+impl fmt::Debug for PrettyInstruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", instruction_name(self.0))
     }
@@ -212,7 +218,7 @@ impl GameState {
         macro_rules! jump_if {
             ($boolean:expr) => {
                 *instruction_pointer += 1;
-                if $boolean {
+                if *instruction_pointer < bytecode.len() && $boolean {
                     *instruction_pointer += bytecode[*instruction_pointer] as usize;
                 }
             };
@@ -231,7 +237,12 @@ impl GameState {
         if cfg!(debug_assertions) || true {
             log(
                 self.vm.logger,
-                &format!("{} : {}", self.vm, PrettyInstruction(instruction)),
+                &format!(
+                    "{:20} {} : {}",
+                    *instruction_pointer,
+                    self.vm,
+                    PrettyInstruction(instruction),
+                ),
             );
         }
 
@@ -253,22 +264,26 @@ impl GameState {
             ADD => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                self.vm.push(a + b);
+                self.vm.push(a.wrapping_add(b));
             }
             SUB => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                self.vm.push(a - b);
+                self.vm.push(a.wrapping_sub(b));
             }
             MUL => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                self.vm.push(a * b);
+                self.vm.push(a.wrapping_mul(b));
             }
             DIV => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                self.vm.push(a / b);
+                self.vm.push(if b != 0 {
+                    a.wrapping_div(b)
+                } else {
+                    255
+                });
             }
             MAX => {
                 let b = self.vm.pop();
@@ -408,7 +423,7 @@ impl GameState {
                 self.vm.push(getsuit(card));
             }
             GET_GRAB_CARD_OR_255 => {
-                let grabpos = self.grabpos as usize;
+                let grabpos = self.grabpos as usize & 15;
                 let grabdepth = self.grabdepth as usize;
                 let cells = &self.cells;
 
@@ -422,7 +437,7 @@ impl GameState {
                 self.vm.push(output);
             }
             GET_DROP_CARD_OR_255 => {
-                let droppos = self.selectpos as usize;
+                let droppos = self.selectpos as usize & 15;
                 let cells = &self.cells;
 
                 let output = {
@@ -448,7 +463,7 @@ impl GameState {
             }
             GET_CELL_LEN => {
                 self.vm
-                    .push(self.cells[self.selectpos as usize].len() as u8);
+                    .push(self.cells[self.selectpos as usize & 15].len() as u8);
             }
             HALT => *instruction_pointer = bytecode.len() - 1,
             _ => unimplemented!(),
