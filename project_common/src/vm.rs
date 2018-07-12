@@ -56,7 +56,10 @@ impl VM {
 
     pub fn pop(&mut self) -> u8 {
         log_assert(self.logger, !self.is_empty(), "stack underflow!");
-
+        //cop-out
+        if self.is_empty() {
+            return 255;
+        }
         let output = self.stack[self.stack_pointer];
 
         self.stack_pointer = self.stack_pointer.wrapping_sub(1);

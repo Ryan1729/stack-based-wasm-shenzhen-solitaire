@@ -180,7 +180,7 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
                 // It could be something like this:
                 // `min(gen_range_or_0(rng, 0, maximum_valid_target), 255) as u8;`
                 // but then we'd need to prevent jumping into the generated instruction.
-                
+
                 output.push(instruction);
                 output.push(target);
 
@@ -244,7 +244,7 @@ mod tests {
 
     #[test]
     fn replicate() {
-        let failed_input: (u64, u64) = (0, 34);
+        let failed_input: (u64, u64) = (37, 33);
         let seed = unsafe { std::mem::transmute(failed_input) };
 
         let mut rng = XorShiftRng::from_seed(seed);

@@ -62,9 +62,9 @@ pub mod Button {
 }
 
 pub fn movecards(state: &mut GameState, grabpos: u8, grabdepth: u8, droppos: u8) {
-    let grabpos = grabpos as usize;
+    let grabpos = grabpos as usize & 15;
     let grabdepth = grabdepth as usize;
-    let droppos = droppos as usize;
+    let droppos = droppos as usize & 15;
     if droppos <= END_OF_FOUNDATIONS as usize {
         if let Some(last) = state.cells[grabpos].pop() {
             if state.cells[droppos].len() > 0 {
