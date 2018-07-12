@@ -256,7 +256,9 @@ impl GameState {
             }
             LITERAL => {
                 *instruction_pointer += 1;
-                self.vm.push(bytecode[*instruction_pointer]);
+                if *instruction_pointer < bytecode.len() {
+                    self.vm.push(bytecode[*instruction_pointer]);
+                }
             }
             FORGET => {
                 self.vm.pop();

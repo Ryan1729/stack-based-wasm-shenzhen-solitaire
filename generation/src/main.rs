@@ -5,12 +5,12 @@ use project_common::GameState;
 
 extern crate rand;
 use rand::{
-    distributions::{Distribution, Standard, Uniform}, Rng, SeedableRng, XorShiftRng,
+    distributions::{Distribution, Uniform}, Rng, SeedableRng, XorShiftRng,
 };
 
 use std::cmp::min;
 
-const INSTRUCTION_POOL: [u8; 48] = [
+const INSTRUCTION_POOL: [u8; 47] = [
     NO_OP,
     FILL_MOVE_TIMER,
     GRAB,
@@ -50,7 +50,8 @@ const INSTRUCTION_POOL: [u8; 48] = [
     FORGET,
     CAN_GRAB,
     HANDLE_BUTTON_PRESS,
-    ASSERT_EMPTY_STACK,
+    //Leaving this out on purpose.
+    //ASSERT_EMPTY_STACK,
     GET_CARD_NUM,
     GET_CARD_SUIT,
     GET_GRAB_CARD_OR_255,
@@ -120,8 +121,9 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
 
     while output.len() < count {
         let len = output.len();
-        stack_depth = min(stack_depth, restrictions[len]);
 
+        stack_depth = min(stack_depth, restrictions[len]);
+        println!("{:?} {:?}", len, stack_depth);
         let instruction = match stack_depth {
             0 => ZERO_PARAM_INSTRUCTION_POOL[zero_range.sample(rng)],
             1 => if rng.gen() {
@@ -141,7 +143,10 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
             GET_SELECT_POS | GET_SELECT_DEPTH | GET_GRAB_POS | GET_GRAB_DEPTH | LITERAL
             | CAN_GRAB | GET_GRAB_CARD_OR_255 | GET_DROP_CARD_OR_255 | GET_SELECT_DROP
             | GET_CELL_LEN => {
-                stack_depth += 1;
+                let previous_instruction = output.last().cloned().unwrap_or(NO_OP);
+                if previous_instruction != LITERAL {
+                    stack_depth += 1;
+                }
             }
             IF | FORGET | SET_SELECT_POS | SET_SELECT_DEPTH | SET_GRAB_POS | SET_GRAB_DEPTH => {
                 stack_depth -= 1;
@@ -154,7 +159,7 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
         }
 
         match instruction {
-            IF | EQ_BRANCH | NE_BRANCH | GT_BRANCH | GE_BRANCH | LT_BRANCH | LE_BRANCH => {
+            IF | EQ_BRANCH | NE_BRANCH | GT_BRANCH | GE_BRANCH | LT_BRANCH | LE_BRANCH | JUMP => {
                 if len == count - 1 {
                     output.push(NO_OP);
                     break;
@@ -173,14 +178,15 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
                     ).cloned()
                         .unwrap_or(0);
                 // It could be something like this:
-                // `min(gen_range_or_0(rng, 0, count - (len + 1)), 255) as u8;`
+                // `min(gen_range_or_0(rng, 0, maximum_valid_target), 255) as u8;`
                 // but then we'd need to prevent jumping into the generated instruction.
-
+                
                 output.push(instruction);
                 output.push(target);
 
-                let absolute_target = len + 1 + target as usize;
+                let absolute_target = min(len + 2 + target as usize, count - 1);
 
+                println!("restrictions[{:?}] = {:?}", absolute_target, stack_depth);
                 restrictions[absolute_target] = stack_depth;
             }
             _ => {
@@ -232,76 +238,13 @@ mod tests {
         let mut game_state = GameState::new([0; 16], Some(logger));
 
         game_state.interpret(&[
-            GET_CELL_LEN,
-            GET_GRAB_CARD_OR_255,
-            GET_CARD_NUM,
-            GET_DROP_CARD_OR_255,
-            SET_GRAB_DEPTH,
-            GET_GRAB_DEPTH,
-            GET_DROP_CARD_OR_255,
-            HANDLE_BUTTON_PRESS,
-            NE,
             LITERAL,
-            EQ,
-            SET_GRAB_DEPTH,
-            GET_DROP_CARD_OR_255,
-            GET_SELECT_DROP,
-            FORGET,
-            GET_CARD_SUIT,
-            CAN_GRAB,
-            SET_SELECT_DEPTH,
-            NO_OP,
-            GET_CELL_LEN,
-            DROP,
-            GET_GRAB_DEPTH,
-            SUB,
-            SET_GRAB_POS,
-            FILL_MOVE_TIMER,
-            GET_GRAB_DEPTH,
-            HANDLE_BUTTON_PRESS,
-            NOT,
-            SET_GRAB_POS,
-            DROP,
-            CAN_GRAB,
-            SET_SELECT_DEPTH,
-            JUMP,
-            HANDLE_BUTTON_PRESS,
-            GET_SELECT_DEPTH,
-            GET_CARD_SUIT,
-            NOT,
-            SET_SELECT_POS,
-            GET_DROP_CARD_OR_255,
-            NO_OP,
-            DROP,
-            DROP,
-            SET_GRAB_POS,
-            GET_CELL_LEN,
-            NOT,
-            DROP,
-            JUMP,
-            GET_SELECT_DEPTH,
-            SET_SELECT_POS,
-            GRAB,
-            SET_GRAB_POS,
-            FILL_MOVE_TIMER,
-            GET_CELL_LEN,
-            IF,
-            GRAB,
-            GET_GRAB_DEPTH,
-            GET_DROP_CARD_OR_255,
-            GET_GRAB_CARD_OR_255,
-            ADD,
-            GET_CELL_LEN,
-            GET_GRAB_DEPTH,
-            LE_BRANCH,
-            NO_OP,
-            GET_DROP_CARD_OR_255,
         ]);
     }
 
     #[test]
     fn replicate() {
-        let failed_input: (u64, u64) = (0, 40);
+        let failed_input: (u64, u64) = (0, 34);
         let seed = unsafe { std::mem::transmute(failed_input) };
 
         let mut rng = XorShiftRng::from_seed(seed);

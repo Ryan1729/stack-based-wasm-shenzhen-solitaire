@@ -76,6 +76,10 @@ pub fn movecards(state: &mut GameState, grabpos: u8, grabdepth: u8, droppos: u8)
     } else {
         let len = state.cells[grabpos].len();
 
+        if len == 0 || grabdepth > len - 1 {
+            return;
+        }
+
         let temp: Vec<_> = state.cells[grabpos].drain(len - 1 - grabdepth..).collect();
 
         state.cells[droppos].extend(temp.into_iter());
@@ -161,6 +165,8 @@ pub fn movedragons(state: &mut GameState) {
 }
 
 pub fn cangrab(cells: &Cells, pos: u8, depth: u8) -> bool {
+    let pos = pos & 15;
+    println!("cells, pos, depth {:?} {:?} {:?}", cells, pos, depth);
     let selection = getselection(cells, pos, depth);
     if selection.len() == 0 || (pos >= FLOWER_FOUNDATION && pos < START_OF_TABLEAU) {
         return false;
@@ -179,7 +185,7 @@ pub fn cangrab(cells: &Cells, pos: u8, depth: u8) -> bool {
         let num = getcardnum(card);
 
         if !first {
-            if suit == lastsuit || num == 0 || num != lastnum - 1 {
+            if suit == lastsuit || num == 0 || lastnum == 0 || num != lastnum - 1 {
                 return false;
             }
         }
@@ -196,14 +202,16 @@ pub fn getselection(cells: &Cells, pos: u8, depth: u8) -> Vec<u8> {
     let depth = depth as usize;
 
     let len = cells[pos].len();
-    if len == 0 {
+    if len == 0 || depth + 2 > len {
         return Vec::new();
     }
 
     let mut output = Vec::with_capacity(depth);
 
+    let start = len - (depth + 2);
+
     for i in 1..=depth + 1 {
-        let index = len - (depth + 1) + i - 1;
+        let index = start + i;
         output.push(cells[pos][index]);
     }
 
