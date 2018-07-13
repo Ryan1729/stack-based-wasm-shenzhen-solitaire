@@ -155,6 +155,9 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
             | GE_BRANCH | LT_BRANCH | LE_BRANCH | EQ | NE | GT | GE | LT | LE => {
                 stack_depth -= 2;
             }
+            MOVE_CARDS => {
+                stack_depth -= 3;
+            }
             _ => {}
         }
 
@@ -182,6 +185,13 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
                 // but then we'd need to prevent jumping into the generated instruction.
 
                 output.push(instruction);
+                {
+                    let len = output.len();
+                    if len < count {
+                        stack_depth = min(stack_depth, restrictions[len]);
+                    }
+                    println!("+{:?} {:?}", len, stack_depth);
+                }
                 output.push(target);
 
                 let absolute_target = min(len + 2 + target as usize, count - 1);
@@ -244,7 +254,7 @@ mod tests {
 
     #[test]
     fn replicate() {
-        let failed_input: (u64, u64) = (37, 33);
+        let failed_input: (u64, u64) = (43, 50);
         let seed = unsafe { std::mem::transmute(failed_input) };
 
         let mut rng = XorShiftRng::from_seed(seed);
