@@ -338,7 +338,6 @@ fn main() {
         output.push_str(&format!("    {},\n", instruction));
     }
 
-    output.push('\n');
     output.push(']');
     output.push('\n');
 
