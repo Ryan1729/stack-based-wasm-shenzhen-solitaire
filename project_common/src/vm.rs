@@ -406,6 +406,13 @@ impl GameState {
                 self.movetimer = MOVE_TIMER_MAX;
             }
             CAN_GRAB => {
+                log(
+                    self.vm.logger,
+                    &format!(
+                        "cells, pos, depth {:?} {:?} {:?}",
+                        &self.cells, self.selectpos, self.selectdepth
+                    ),
+                );
                 let output = if cangrab(&self.cells, self.selectpos, self.selectdepth) {
                     255
                 } else {

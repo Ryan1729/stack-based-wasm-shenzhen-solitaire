@@ -166,7 +166,7 @@ pub fn movedragons(state: &mut GameState) {
 
 pub fn cangrab(cells: &Cells, pos: u8, depth: u8) -> bool {
     let pos = pos & 15;
-    println!("cells, pos, depth {:?} {:?} {:?}", cells, pos, depth);
+
     let selection = getselection(cells, pos, depth);
     if selection.len() == 0 || (pos >= FLOWER_FOUNDATION && pos < START_OF_TABLEAU) {
         return false;
@@ -197,17 +197,19 @@ pub fn cangrab(cells: &Cells, pos: u8, depth: u8) -> bool {
     return true;
 }
 
+const SMALLEST_PO2_MINUS_1_GREATER_THAN_MAX_CARD: usize = 31;
+
 pub fn getselection(cells: &Cells, pos: u8, depth: u8) -> Vec<u8> {
     let pos = pos as usize;
-    let depth = depth as usize;
+    let depth = depth as usize & SMALLEST_PO2_MINUS_1_GREATER_THAN_MAX_CARD;
 
     let len = cells[pos].len();
-    if len == 0 || depth + 2 > len {
+    if len == 0 {
         return Vec::new();
     }
 
     let mut output = Vec::with_capacity(depth);
-
+    println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>{:?} {}", len, depth + 2);
     let start = len - (depth + 2);
 
     for i in 1..=depth + 1 {
