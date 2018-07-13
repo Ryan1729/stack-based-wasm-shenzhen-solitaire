@@ -52,7 +52,7 @@ pub fn log_assert(logger: Logger, is_fine: bool, s: &str) {
 }
 
 impl VM {
-    pub const STACK_SIZE: usize = 128;
+    pub const STACK_SIZE: usize = 512;
 
     pub fn pop(&mut self) -> u8 {
         log_assert(self.logger, !self.is_empty(), "stack underflow!");
@@ -74,6 +74,13 @@ impl VM {
 
     pub fn is_empty(&self) -> bool {
         self.stack_pointer == usize::max_value()
+    }
+
+    pub fn clear(&mut self) {
+        self.stack_pointer = usize::max_value();
+        for i in 0..VM::STACK_SIZE {
+            self.stack[i] = 0;
+        }
     }
 }
 

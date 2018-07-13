@@ -371,6 +371,8 @@ fn update(state: &mut GameState, input: Input) {
                 state.interpret(&[DROP]);
             }
         }
+
+        state.vm.clear();
     }
 }
 
