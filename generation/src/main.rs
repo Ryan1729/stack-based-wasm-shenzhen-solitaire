@@ -196,8 +196,12 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
 
                 let absolute_target = min(len + 2 + target as usize, count - 1);
 
-                println!("restrictions[{:?}] = {:?}", absolute_target, stack_depth);
-                restrictions[absolute_target] = stack_depth;
+                println!(
+                    "restrictions[{:?}] = {:?}",
+                    absolute_target,
+                    min(restrictions[absolute_target], stack_depth)
+                );
+                restrictions[absolute_target] = min(restrictions[absolute_target], stack_depth);
             }
             _ => {
                 output.push(instruction);
