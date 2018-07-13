@@ -176,7 +176,7 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
                         &ZERO_PARAM_INSTRUCTION_POOL
                             .iter()
                             .cloned()
-                            .filter(|&inst| inst < maximum_valid_target)
+                            .filter(|&inst| inst < maximum_valid_target && inst != JUMP)
                             .collect::<Vec<_>>(),
                     ).cloned()
                         .unwrap_or(0);
