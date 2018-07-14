@@ -209,11 +209,9 @@ pub fn getselection(cells: &Cells, pos: u8, depth: u8) -> Vec<u8> {
     }
 
     let mut output = Vec::with_capacity(depth);
-    println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>{:?} {}", len, depth + 2);
-    let start = len - (depth + 2);
 
-    for i in 1..=depth + 1 {
-        let index = start + i;
+    for i in 0..=depth {
+        let index = (len + i) - (depth + 1);
         output.push(cells[pos][index]);
     }
 

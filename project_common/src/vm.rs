@@ -413,6 +413,7 @@ impl GameState {
                         &self.cells, self.selectpos, self.selectdepth
                     ),
                 );
+
                 let output = if cangrab(&self.cells, self.selectpos, self.selectdepth) {
                     255
                 } else {
