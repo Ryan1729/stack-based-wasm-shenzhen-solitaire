@@ -204,7 +204,7 @@ pub fn getselection(cells: &Cells, pos: u8, depth: u8) -> Vec<u8> {
     let depth = depth as usize & SMALLEST_PO2_MINUS_1_GREATER_THAN_MAX_CARD;
 
     let len = cells[pos].len();
-    if len == 0 || depth > len {
+    if len == 0 || depth > len - 1 {
         return Vec::new();
     }
 
