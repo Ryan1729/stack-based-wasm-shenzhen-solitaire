@@ -457,7 +457,7 @@ mod tests {
 
     #[test]
     fn replicate() {
-        let failed_input: (u64, u64) = (46, 82);
+        let failed_input: (u64, u64) = (0, 0);
 
         let mut game_state = GameState::new([0; 16], Some(logger));
 
@@ -465,34 +465,20 @@ mod tests {
 
         let mut rng = XorShiftRng::from_seed(seed);
 
-        {
+        for i in 0..16 {
+            game_state.grabpos = i;
+
             let insructions = generate(&mut rng, 512);
 
             let pretty_instructions: Vec<_> =
                 insructions.iter().map(|&b| PrettyInstruction(b)).collect();
             logger(&format!("insructions: {:?}", &pretty_instructions));
 
-            game_state.interpret(&insructions);
-        }
+            for _ in 0..8 {
+                game_state.interpret(&insructions);
 
-        {
-            let insructions = generate(&mut rng, 512);
-
-            let pretty_instructions: Vec<_> =
-                insructions.iter().map(|&b| PrettyInstruction(b)).collect();
-            logger(&format!("insructions: {:?}", &pretty_instructions));
-
-            game_state.interpret(&insructions);
-        }
-
-        {
-            let insructions = generate(&mut rng, 512);
-
-            let pretty_instructions: Vec<_> =
-                insructions.iter().map(|&b| PrettyInstruction(b)).collect();
-            logger(&format!("insructions: {:?}", &pretty_instructions));
-
-            game_state.interpret(&insructions);
+                game_state.vm.clear();
+            }
         }
     }
 
@@ -510,6 +496,8 @@ mod tests {
                 let insructions = generate(&mut rng, 512);
                 for _ in 0..8 {
                     game_state.interpret(&insructions);
+
+                    game_state.vm.clear();
                 }
             }
 

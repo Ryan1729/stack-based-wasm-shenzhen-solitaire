@@ -204,14 +204,14 @@ pub fn getselection(cells: &Cells, pos: u8, depth: u8) -> Vec<u8> {
     let depth = depth as usize & SMALLEST_PO2_MINUS_1_GREATER_THAN_MAX_CARD;
 
     let len = cells[pos].len();
-    if len == 0 {
+    if len == 0 || depth > len {
         return Vec::new();
     }
 
     let mut output = Vec::with_capacity(depth);
 
     for i in 0..=depth {
-        let index = (len + i) - (depth + 1);
+        let index = (len - 1 + i) - depth;
         output.push(cells[pos][index]);
     }
 
