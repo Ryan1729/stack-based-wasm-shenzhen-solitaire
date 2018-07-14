@@ -2,6 +2,7 @@ use *;
 
 pub type Logger = Option<fn(&str) -> ()>;
 
+#[derive(Clone)]
 pub struct VM {
     stack_pointer: usize,
     stack: [u8; VM::STACK_SIZE],
@@ -11,6 +12,25 @@ pub struct VM {
 use std::fmt;
 
 impl fmt::Display for VM {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.stack_pointer == usize::max_value() {
+            return write!(f, "[ ]");
+        }
+        write!(f, "[")?;
+
+        let mut sep = "";
+        for i in 0..=self.stack_pointer {
+            let elem = self.stack[i];
+
+            write!(f, "{}{}", sep, elem)?;
+            sep = ", ";
+        }
+
+        write!(f, "]")
+    }
+}
+
+impl fmt::Debug for VM {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.stack_pointer == usize::max_value() {
             return write!(f, "[ ]");

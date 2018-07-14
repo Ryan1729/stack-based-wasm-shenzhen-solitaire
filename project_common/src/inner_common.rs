@@ -43,6 +43,7 @@ pub type Cells = [Vec<u8>; CELLS_MAX_INDEX as usize + 1];
 use rand::XorShiftRng;
 use vm::VM;
 
+#[derive(Clone, Debug)]
 pub struct GameState {
     pub cells: Cells,
     pub wins: u8,

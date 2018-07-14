@@ -229,6 +229,8 @@ extern crate quickcheck;
 mod tests {
     use super::*;
 
+    use quickcheck::{Arbitrary, Gen};
+
     fn logger(s: &str) {
         println!("{}", s);
     }
@@ -477,32 +479,105 @@ mod tests {
             for _ in 0..8 {
                 game_state.interpret(&insructions);
 
+                scramble(&mut rng, &mut game_state);
+
                 game_state.vm.clear();
             }
         }
     }
 
     quickcheck!{
-        fn does_not_over_or_underflow(pre_seed: (u64, u64)) -> bool {
-
+        fn does_not_over_or_underflow(p: ((u64, u64), ArbGameState)) -> bool {
+            let  (pre_seed, ArbGameState(mut game_state)) = p;
             let seed = unsafe { std::mem::transmute(pre_seed) };
-            let mut game_state = GameState::new(seed, Some(logger));
 
             let mut rng = XorShiftRng::from_seed(seed);
 
-            for i in 0..16 {
-                game_state.grabpos = i;
+            let insructions = generate(&mut rng, 512);
+            for _ in 0..8 {
+                game_state.interpret(&insructions);
 
-                let insructions = generate(&mut rng, 512);
-                for _ in 0..8 {
-                    game_state.interpret(&insructions);
-
-                    game_state.vm.clear();
-                }
+                game_state.vm.clear();
             }
 
             //didn't panic
             true
+        }
+    }
+
+    fn scramble<R: Rng>(rng: &mut R, game_state: &mut GameState) {
+        for column in game_state.cells.iter_mut() {
+            rng.shuffle(column);
+        }
+
+        rng.shuffle(&mut game_state.cells);
+
+        game_state.selectdrop = rng.gen();
+        game_state.selectpos = rng.gen();
+        game_state.selectdepth = rng.gen();
+        game_state.grabpos = rng.gen();
+        game_state.grabdepth = rng.gen();
+    }
+
+    fn max_out(game_state: &mut GameState) {
+        game_state.selectdrop = true;
+        game_state.selectpos = u8::max_value();
+        game_state.selectdepth = u8::max_value();
+        game_state.grabpos = u8::max_value();
+        game_state.grabdepth = u8::max_value();
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct ArbGameState(pub GameState);
+
+    impl Arbitrary for ArbGameState {
+        fn arbitrary<G: Gen>(g: &mut G) -> Self {
+            let seed: [u8; 16] = g.gen();
+
+            let mut game_state = GameState::new(seed, Some(logger));
+
+            for column in game_state.cells.iter_mut() {
+                g.shuffle(column);
+            }
+
+            g.shuffle(&mut game_state.cells);
+
+            game_state.selectdrop = g.gen();
+            game_state.selectpos = g.gen();
+            game_state.selectdepth = g.gen();
+            game_state.grabpos = g.gen();
+            game_state.grabdepth = g.gen();
+
+            ArbGameState(game_state)
+        }
+
+        fn shrink(&self) -> Box<Iterator<Item = ArbGameState>> {
+            let game_state = self.0.clone();
+            let tuple = (
+                game_state.selectdrop,
+                game_state.selectpos,
+                game_state.selectdepth,
+                game_state.grabpos,
+                game_state.grabdepth,
+            );
+
+            Box::new(tuple.shrink().map(
+                move |(selectdrop, selectpos, selectdepth, grabpos, grabdepth)| {
+                    ArbGameState(GameState {
+                        cells: game_state.cells.clone(),
+                        wins: game_state.wins,
+                        win_done: game_state.win_done,
+                        selectdrop,
+                        selectpos,
+                        selectdepth,
+                        grabpos,
+                        grabdepth,
+                        movetimer: game_state.movetimer,
+                        vm: game_state.vm.clone(),
+                        rng: game_state.rng.clone(),
+                    })
+                },
+            ))
         }
     }
 }
