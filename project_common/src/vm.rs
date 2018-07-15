@@ -408,7 +408,7 @@ impl GameState {
             }
             GET_SELECT_POS => self.vm.push(self.selectpos),
             SET_SELECT_POS => {
-                self.selectpos = self.vm.pop();
+                self.selectpos = self.vm.pop() & 15;
             }
             GET_SELECT_DEPTH => self.vm.push(self.selectdepth),
             SET_SELECT_DEPTH => {
@@ -416,7 +416,7 @@ impl GameState {
             }
             GET_GRAB_POS => self.vm.push(self.grabpos),
             SET_GRAB_POS => {
-                self.grabpos = self.vm.pop();
+                self.grabpos = self.vm.pop() & 15;
             }
             GET_GRAB_DEPTH => self.vm.push(self.grabdepth),
             SET_GRAB_DEPTH => {
