@@ -104,14 +104,114 @@ const TWO_PARAM_INSTRUCTION_POOL: [u8; 20] = [
 #[allow(dead_code)]
 const THREE_PARAM_INSTRUCTION_POOL: [u8; 1] = [MOVE_CARDS];
 
+#[macro_use]
+extern crate lazy_static;
+
+fn generate_instruction_compatible_with_stack_depth<R: Rng>(rng: &mut R, stack_depth: u8) -> u8 {
+    lazy_static! {
+        static ref FULL_RANGE: Uniform<usize> = Uniform::from(0..INSTRUCTION_POOL.len());
+        static ref ZERO_RANGE: Uniform<usize> = Uniform::from(0..ZERO_PARAM_INSTRUCTION_POOL.len());
+        static ref ONE_RANGE: Uniform<usize> = Uniform::from(0..ONE_PARAM_INSTRUCTION_POOL.len());
+        static ref TWO_RANGE: Uniform<usize> = Uniform::from(0..TWO_PARAM_INSTRUCTION_POOL.len());
+        static ref ZERO_TO_TWO: Uniform<usize> = Uniform::from(0..3);
+    }
+
+    match stack_depth {
+        0 => ZERO_PARAM_INSTRUCTION_POOL[ZERO_RANGE.sample(rng)],
+        1 => if rng.gen() {
+            ONE_PARAM_INSTRUCTION_POOL[ONE_RANGE.sample(rng)]
+        } else {
+            ZERO_PARAM_INSTRUCTION_POOL[ZERO_RANGE.sample(rng)]
+        },
+        2 => match ZERO_TO_TWO.sample(rng) {
+            0 => ZERO_PARAM_INSTRUCTION_POOL[ZERO_RANGE.sample(rng)],
+            1 => ONE_PARAM_INSTRUCTION_POOL[ONE_RANGE.sample(rng)],
+            _ => TWO_PARAM_INSTRUCTION_POOL[TWO_RANGE.sample(rng)],
+        },
+        _ => INSTRUCTION_POOL[FULL_RANGE.sample(rng)],
+    }
+}
+
+fn insert_instruction<R: Rng>(
+    rng: &mut R,
+    output: &mut Vec<u8>,
+    stack_depth: &mut u8,
+    restrictions: &mut Vec<u8>,
+    instruction: u8,
+    count: usize,
+) {
+    let len = output.len();
+
+    match instruction {
+        GET_SELECT_POS | GET_SELECT_DEPTH | GET_GRAB_POS | GET_GRAB_DEPTH | LITERAL | CAN_GRAB
+        | GET_GRAB_CARD_OR_255 | GET_DROP_CARD_OR_255 | GET_SELECT_DROP | GET_CELL_LEN => {
+            let previous_instruction = output.last().cloned().unwrap_or(NO_OP);
+            if previous_instruction != LITERAL {
+                *stack_depth += 1;
+            }
+        }
+        IF | FORGET | SET_SELECT_POS | SET_SELECT_DEPTH | SET_GRAB_POS | SET_GRAB_DEPTH => {
+            *stack_depth -= 1;
+        }
+        ADD | SUB | MUL | DIV | MAX | MIN | AND | OR | EQ_BRANCH | NE_BRANCH | GT_BRANCH
+        | GE_BRANCH | LT_BRANCH | LE_BRANCH | EQ | NE | GT | GE | LT | LE => {
+            *stack_depth -= 2;
+        }
+        MOVE_CARDS => {
+            *stack_depth -= 3;
+        }
+        _ => {}
+    }
+
+    match instruction {
+        IF | EQ_BRANCH | NE_BRANCH | GT_BRANCH | GE_BRANCH | LT_BRANCH | LE_BRANCH | JUMP => {
+            if len == count - 1 {
+                output.push(NO_OP);
+                return;
+            }
+
+            let maximum_valid_target = min((count - 1) - (len + 1), 255) as u8;
+
+            // Choosing target this way is a bit of a cop-out, which reduces the range of the generator.
+            let target =
+                rng.choose(
+                    &ZERO_PARAM_INSTRUCTION_POOL
+                        .iter()
+                        .cloned()
+                        .filter(|&inst| inst < maximum_valid_target && inst != JUMP)
+                        .collect::<Vec<_>>(),
+                ).cloned()
+                    .unwrap_or(0);
+            // It could be something like this:
+            // `min(gen_range_or_0(rng, 0, maximum_valid_target), 255) as u8;`
+            // but then we'd need to prevent jumping into the generated instruction.
+
+            output.push(instruction);
+            {
+                let len = output.len();
+                if len < count {
+                    *stack_depth = min(*stack_depth, restrictions[len]);
+                }
+                println!("+{:?} {:?}", len, stack_depth);
+            }
+            output.push(target);
+
+            let absolute_target = min(len + 2 + target as usize, count - 1);
+
+            println!(
+                "restrictions[{:?}] = {:?}",
+                absolute_target,
+                min(restrictions[absolute_target], *stack_depth)
+            );
+            restrictions[absolute_target] = min(restrictions[absolute_target], *stack_depth);
+        }
+        _ => {
+            output.push(instruction);
+        }
+    }
+}
+
 fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
-    let full_range = Uniform::from(0..INSTRUCTION_POOL.len());
-    let zero_range = Uniform::from(0..ZERO_PARAM_INSTRUCTION_POOL.len());
-    let one_range = Uniform::from(0..ONE_PARAM_INSTRUCTION_POOL.len());
-    let two_range = Uniform::from(0..TWO_PARAM_INSTRUCTION_POOL.len());
-
-    let zero_to_two = Uniform::from(0..3);
-
     let mut output = Vec::new();
 
     //TODO:: If count turns out to get very high then this should be a hashmap instead.
@@ -124,92 +224,43 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
 
         stack_depth = min(stack_depth, restrictions[len]);
         println!("{:?} {:?}", len, stack_depth);
-        let instruction = match stack_depth {
-            0 => ZERO_PARAM_INSTRUCTION_POOL[zero_range.sample(rng)],
-            1 => if rng.gen() {
-                ONE_PARAM_INSTRUCTION_POOL[one_range.sample(rng)]
-            } else {
-                ZERO_PARAM_INSTRUCTION_POOL[zero_range.sample(rng)]
-            },
-            2 => match zero_to_two.sample(rng) {
-                0 => ZERO_PARAM_INSTRUCTION_POOL[zero_range.sample(rng)],
-                1 => ONE_PARAM_INSTRUCTION_POOL[one_range.sample(rng)],
-                _ => TWO_PARAM_INSTRUCTION_POOL[two_range.sample(rng)],
-            },
-            _ => INSTRUCTION_POOL[full_range.sample(rng)],
-        };
+        let instruction = generate_instruction_compatible_with_stack_depth(rng, stack_depth);
 
-        match instruction {
-            GET_SELECT_POS | GET_SELECT_DEPTH | GET_GRAB_POS | GET_GRAB_DEPTH | LITERAL
-            | CAN_GRAB | GET_GRAB_CARD_OR_255 | GET_DROP_CARD_OR_255 | GET_SELECT_DROP
-            | GET_CELL_LEN => {
-                let previous_instruction = output.last().cloned().unwrap_or(NO_OP);
-                if previous_instruction != LITERAL {
-                    stack_depth += 1;
-                }
-            }
-            IF | FORGET | SET_SELECT_POS | SET_SELECT_DEPTH | SET_GRAB_POS | SET_GRAB_DEPTH => {
-                stack_depth -= 1;
-            }
-            ADD | SUB | MUL | DIV | MAX | MIN | AND | OR | EQ_BRANCH | NE_BRANCH | GT_BRANCH
-            | GE_BRANCH | LT_BRANCH | LE_BRANCH | EQ | NE | GT | GE | LT | LE => {
-                stack_depth -= 2;
-            }
-            MOVE_CARDS => {
-                stack_depth -= 3;
-            }
-            _ => {}
-        }
-
-        match instruction {
-            IF | EQ_BRANCH | NE_BRANCH | GT_BRANCH | GE_BRANCH | LT_BRANCH | LE_BRANCH | JUMP => {
-                if len == count - 1 {
-                    output.push(NO_OP);
-                    break;
-                }
-
-                let maximum_valid_target = min((count - 1) - (len + 1), 255) as u8;
-
-                // Choosing target this way is a bit of a cop-out, which reduces the range of the generator.
-                let target =
-                    rng.choose(
-                        &ZERO_PARAM_INSTRUCTION_POOL
-                            .iter()
-                            .cloned()
-                            .filter(|&inst| inst < maximum_valid_target && inst != JUMP)
-                            .collect::<Vec<_>>(),
-                    ).cloned()
-                        .unwrap_or(0);
-                // It could be something like this:
-                // `min(gen_range_or_0(rng, 0, maximum_valid_target), 255) as u8;`
-                // but then we'd need to prevent jumping into the generated instruction.
-
-                output.push(instruction);
-                {
-                    let len = output.len();
-                    if len < count {
-                        stack_depth = min(stack_depth, restrictions[len]);
-                    }
-                    println!("+{:?} {:?}", len, stack_depth);
-                }
-                output.push(target);
-
-                let absolute_target = min(len + 2 + target as usize, count - 1);
-
-                println!(
-                    "restrictions[{:?}] = {:?}",
-                    absolute_target,
-                    min(restrictions[absolute_target], stack_depth)
-                );
-                restrictions[absolute_target] = min(restrictions[absolute_target], stack_depth);
-            }
-            _ => {
-                output.push(instruction);
-            }
-        }
+        insert_instruction(
+            rng,
+            &mut output,
+            &mut stack_depth,
+            &mut restrictions,
+            instruction,
+            count,
+        );
     }
 
     output
+}
+
+fn generate_containing_instructions<R: Rng>(
+    rng: &mut R,
+    count: usize,
+    required_instructions: &[u8],
+) -> Vec<u8> {
+    if count <= required_instructions.len() {
+        return required_instructions.to_vec();
+    }
+
+    //TODO copy from `generate` into here and then look at `restrictions` to decide when to
+    //skipp calling `generate_instruction_compatible_with_stack_depth` and instead start inserting
+    //te required instructions
+    let mut instructions = generate(rng, count);
+
+    let index = rng.gen_range(0, count - required_instructions.len());
+
+    for (grab_index, instruction_index) in (index..index + required_instructions.len()).enumerate()
+    {
+        instructions[instruction_index] = required_instructions[grab_index];
+    }
+
+    instructions
 }
 
 // We'll define a grab as  a series of instructions, that at least some of the time, executes this
@@ -223,19 +274,7 @@ const GRAB_INSTRUCTIONS: [u8; 5] = [
 ];
 
 fn generate_grab<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
-    if count <= GRAB_INSTRUCTIONS.len() {
-        return GRAB_INSTRUCTIONS.to_vec();
-    }
-
-    let mut instructions = generate(rng, count);
-
-    let index = rng.gen_range(0, count - GRAB_INSTRUCTIONS.len());
-
-    for (grab_index, instruction_index) in (index..index + GRAB_INSTRUCTIONS.len()).enumerate() {
-        instructions[instruction_index] = GRAB_INSTRUCTIONS[grab_index];
-    }
-
-    instructions
+    generate_containing_instructions(rng, count, &GRAB_INSTRUCTIONS)
 }
 
 #[allow(dead_code)]
@@ -254,6 +293,8 @@ extern crate quickcheck;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const TEST_GENERATION_COUNT: usize = 100;
 
     use quickcheck::{Arbitrary, Gen};
 
@@ -284,15 +325,34 @@ mod tests {
 
     #[test]
     fn replicate() {
-        let failed_input: (u64, u64) = (69, 93);
+        let failed_input: (u64, u64) = (95, 71);
 
         let mut game_state = GameState::new([0; 16], Some(logger));
+
+        game_state.cells = [
+            vec![3, 17, 14, 20, 13],
+            vec![],
+            vec![],
+            vec![10, 16, 11, 27, 21],
+            vec![24, 18, 10, 22, 8],
+            vec![],
+            vec![20, 19, 1, 10, 9],
+            vec![],
+            vec![],
+            vec![],
+            vec![10, 20, 4, 2, 26],
+            vec![],
+            vec![],
+            vec![28, 20, 5, 29, 23],
+            vec![0, 25, 0, 0, 7],
+            vec![6, 12, 0, 15, 30],
+        ];
 
         let seed = unsafe { std::mem::transmute(failed_input) };
 
         let mut rng = XorShiftRng::from_seed(seed);
 
-        let insructions = generate_grab(&mut rng, 512);
+        let insructions = generate_grab(&mut rng, TEST_GENERATION_COUNT);
 
         let pretty_instructions: Vec<_> =
             insructions.iter().map(|&b| PrettyInstruction(b)).collect();
@@ -312,7 +372,7 @@ mod tests {
 
             let mut rng = XorShiftRng::from_seed(seed);
 
-            let insructions = generate_grab(&mut rng, 512);
+            let insructions = generate_grab(&mut rng, TEST_GENERATION_COUNT);
             for _ in 0..8 {
                 game_state.interpret(&insructions);
 
@@ -330,7 +390,7 @@ mod tests {
 
             let mut rng = XorShiftRng::from_seed(seed);
 
-            let insructions = generate(&mut rng, 512);
+            let insructions = generate(&mut rng, TEST_GENERATION_COUNT);
             for _ in 0..8 {
                 game_state.interpret(&insructions);
 
