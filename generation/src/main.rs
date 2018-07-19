@@ -244,23 +244,61 @@ fn generate_containing_instructions<R: Rng>(
     count: usize,
     required_instructions: &[u8],
 ) -> Vec<u8> {
-    if count <= required_instructions.len() {
+    let required_len = required_instructions.len();
+    if count <= required_len {
         return required_instructions.to_vec();
     }
 
     //TODO copy from `generate` into here and then look at `restrictions` to decide when to
     //skipp calling `generate_instruction_compatible_with_stack_depth` and instead start inserting
     //te required instructions
-    let mut instructions = generate(rng, count);
+    let mut output = Vec::new();
 
-    let index = rng.gen_range(0, count - required_instructions.len());
+    //TODO:: If count turns out to get very high then this should be a hashmap instead.
+    let mut restrictions = vec![255; count];
 
-    for (grab_index, instruction_index) in (index..index + required_instructions.len()).enumerate()
-    {
-        instructions[instruction_index] = required_instructions[grab_index];
+    let mut stack_depth: u8 = 0;
+
+    while output.len() < count {
+        let len = output.len();
+
+        stack_depth = min(stack_depth, restrictions[len]);
+
+        let can_fit_instructions = count - len >= required_len && {
+            let mut result = true;
+            for &restriction in restrictions[len..len + required_len].iter() {
+                if restriction == 255 || restriction < stack_depth {
+                    result = false;
+                    break;
+                }
+            }
+
+            result
+        };
+
+        if can_fit_instructions && rng.gen(/*TODO tune this.*/) {
+            for i in 0..required_len {
+                output.push(required_instructions[i]);
+                let index = len + i;
+                if index < count {
+                    restrictions[index] = min(restrictions[index], stack_depth);
+                }
+            }
+        } else {
+            let instruction = generate_instruction_compatible_with_stack_depth(rng, stack_depth);
+
+            insert_instruction(
+                rng,
+                &mut output,
+                &mut stack_depth,
+                &mut restrictions,
+                instruction,
+                count,
+            );
+        }
     }
 
-    instructions
+    output
 }
 
 // We'll define a grab as  a series of instructions, that at least some of the time, executes this
@@ -325,28 +363,9 @@ mod tests {
 
     #[test]
     fn replicate() {
-        let failed_input: (u64, u64) = (95, 71);
+        let failed_input: (u64, u64) = (72, 53);
 
         let mut game_state = GameState::new([0; 16], Some(logger));
-
-        game_state.cells = [
-            vec![3, 17, 14, 20, 13],
-            vec![],
-            vec![],
-            vec![10, 16, 11, 27, 21],
-            vec![24, 18, 10, 22, 8],
-            vec![],
-            vec![20, 19, 1, 10, 9],
-            vec![],
-            vec![],
-            vec![],
-            vec![10, 20, 4, 2, 26],
-            vec![],
-            vec![],
-            vec![28, 20, 5, 29, 23],
-            vec![0, 25, 0, 0, 7],
-            vec![6, 12, 0, 15, 30],
-        ];
 
         let seed = unsafe { std::mem::transmute(failed_input) };
 
