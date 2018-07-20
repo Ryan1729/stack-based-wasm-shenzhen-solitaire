@@ -301,8 +301,8 @@ fn generate_containing_instructions<R: Rng>(
     output
 }
 
-// We'll define a grab as  a series of instructions, that at least some of the time, executes this
-// series of instructions.
+// We'll define a grab as a series of instructions, that at least some of the time, executes this
+// multi-part series of instructions.
 const GRAB_INSTRUCTIONS: [u8; 5] = [
     GET_SELECT_POS,
     SET_GRAB_POS,
@@ -311,8 +311,18 @@ const GRAB_INSTRUCTIONS: [u8; 5] = [
     GRAB,
 ];
 
+const MOVE_INSTRUCTIONS: [u8; 1] = [MOVE_CARDS];
+
 fn generate_grab<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
-    generate_containing_instructions(rng, count, &GRAB_INSTRUCTIONS)
+    let mut output = generate_containing_instructions(rng, count / 2, &GRAB_INSTRUCTIONS);
+
+    output.extend(generate_containing_instructions(
+        rng,
+        count / 2,
+        &MOVE_INSTRUCTIONS,
+    ));
+
+    output
 }
 
 #[allow(dead_code)]
