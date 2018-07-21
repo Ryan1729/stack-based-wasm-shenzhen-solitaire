@@ -259,8 +259,6 @@ fn generate_containing_instructions<R: Rng>(
 
     let mut stack_depth: u8 = 0;
 
-    let mut placed_move_cards = false;
-
     while output.len() < count {
         let len = output.len();
 
@@ -278,10 +276,7 @@ fn generate_containing_instructions<R: Rng>(
             result
         };
 
-        if !placed_move_cards && stack_depth >= 3 {
-            output.push(MOVE_CARDS);
-            restrictions[len] = min(restrictions[len], stack_depth - 3);
-        } else if can_fit_instructions && rng.gen(/*TODO tune this.*/) {
+        if can_fit_instructions && rng.gen(/*TODO tune this.*/) {
             for i in 0..required_len {
                 output.push(required_instructions[i]);
                 let index = len + i;
@@ -316,7 +311,7 @@ const GRAB_INSTRUCTIONS: [u8; 5] = [
     GRAB,
 ];
 
-const MOVE_INSTRUCTIONS: [u8; 1] = [MOVE_CARDS];
+const MOVE_INSTRUCTIONS: [u8; 4] = [GET_GRAB_POS, GET_GRAB_DEPTH, GET_SELECT_POS, MOVE_CARDS];
 
 fn generate_grab<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
     let mut output = generate_containing_instructions(rng, count / 2, &GRAB_INSTRUCTIONS);
