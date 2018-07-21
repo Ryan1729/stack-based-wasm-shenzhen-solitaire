@@ -259,6 +259,8 @@ fn generate_containing_instructions<R: Rng>(
 
     let mut stack_depth: u8 = 0;
 
+    let mut placed_move_cards = false;
+
     while output.len() < count {
         let len = output.len();
 
@@ -276,7 +278,10 @@ fn generate_containing_instructions<R: Rng>(
             result
         };
 
-        if can_fit_instructions && rng.gen(/*TODO tune this.*/) {
+        if !placed_move_cards && stack_depth >= 3 {
+            output.push(MOVE_CARDS);
+            restrictions[len] = min(restrictions[len], stack_depth - 3);
+        } else if can_fit_instructions && rng.gen(/*TODO tune this.*/) {
             for i in 0..required_len {
                 output.push(required_instructions[i]);
                 let index = len + i;
