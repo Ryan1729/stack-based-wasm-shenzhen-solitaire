@@ -231,8 +231,27 @@ impl GameState {
 
             i += 1;
         }
+    }
 
-        //TODO clear the stack?
+    pub fn interpret_and_return_visited_instruction_pointers(
+        &mut self,
+        bytecode: &[u8],
+    ) -> Vec<usize> {
+        let mut output: Vec<usize> = Vec::with_capacity(bytecode.len());
+
+        let len = bytecode.len();
+        let mut i = 0;
+        while i < len {
+            let instruction = bytecode[i];
+
+            self.interpret_instruction(bytecode, &mut i, instruction);
+
+            output.push(i);
+
+            i += 1;
+        }
+
+        output
     }
 
     #[inline]

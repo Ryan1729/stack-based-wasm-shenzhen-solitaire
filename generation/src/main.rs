@@ -301,9 +301,15 @@ fn generate_containing_instructions<R: Rng>(
     output
 }
 
-// We'll define a grab as a series of instructions, that at least some of the time, executes this
-// multi-part series of instructions.
-const GRAB_INSTRUCTIONS: [u8; 5] = [
+// We'll define a grab as a series of instructions, that at least some of the time, executes both
+// halves of this conditional.
+const GRAB_INSTRUCTIONS: [u8; 11] = [
+    IF,
+    4,
+    GET_GRAB_POS,
+    GET_GRAB_DEPTH,
+    GET_SELECT_POS,
+    MOVE_CARDS,
     GET_SELECT_POS,
     SET_GRAB_POS,
     GET_SELECT_DEPTH,
@@ -311,16 +317,11 @@ const GRAB_INSTRUCTIONS: [u8; 5] = [
     GRAB,
 ];
 
-const MOVE_INSTRUCTIONS: [u8; 4] = [GET_GRAB_POS, GET_GRAB_DEPTH, GET_SELECT_POS, MOVE_CARDS];
+const GRAB_INSTRUCTIONS_TRUE_RELATIVES_SIDE_INDICIES: [usize; 5] = [6, 7, 8, 9, 10];
+const GRAB_INSTRUCTIONS_FALSE_RELATIVES_SIDE_INDICIES: [usize; 4] = [2, 3, 4, 5];
 
 fn generate_grab<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
-    let mut output = generate_containing_instructions(rng, count / 2, &GRAB_INSTRUCTIONS);
-
-    output.extend(generate_containing_instructions(
-        rng,
-        count / 2,
-        &MOVE_INSTRUCTIONS,
-    ));
+    let mut output = generate_containing_instructions(rng, count, &GRAB_INSTRUCTIONS);
 
     output
 }
@@ -429,6 +430,64 @@ mod tests {
             //didn't panic
             true
         }
+
+        fn generate_grab_executes_both_halves(p: ((u64, u64), ArbGameState)) -> bool {
+            let (pre_seed, ArbGameState(mut game_state)) = p;
+
+            let seed = unsafe { std::mem::transmute(pre_seed) };
+
+            let mut rng = XorShiftRng::from_seed(seed);
+
+            let insructions = generate_grab(&mut rng, TEST_GENERATION_COUNT);
+
+            let possible_base = find_subsequence(&insructions, &GRAB_INSTRUCTIONS);
+
+            let inserted_instruction_base = if let Some(inserted_instruction_base) = possible_base {
+                inserted_instruction_base
+            } else {
+                return false;
+            };
+
+            use std::collections::HashSet;
+            let mut visited: HashSet<usize> = HashSet::with_capacity(TEST_GENERATION_COUNT);
+
+            for _ in 0..8 {
+                let just_visited =
+                    game_state.interpret_and_return_visited_instruction_pointers(&insructions);
+
+                for &v in just_visited.iter() {
+                    visited.insert(v);
+                }
+
+                game_state.vm.clear();
+            }
+
+            let to_absolute = |&i| i + inserted_instruction_base;
+
+            let was_visited = |i| visited.contains(&i);
+
+            let true_side_executed = GRAB_INSTRUCTIONS_TRUE_RELATIVES_SIDE_INDICIES
+                .iter()
+                .map(to_absolute).all(was_visited);
+            let false_side_executed = GRAB_INSTRUCTIONS_FALSE_RELATIVES_SIDE_INDICIES
+                .iter()
+                .map(to_absolute).all(was_visited);
+
+            true_side_executed && false_side_executed
+        }
+    }
+
+    // https://stackoverflow.com/a/35907071/4496839
+    // O(mn)
+    // if that's too slow theres a KMP impl at
+    // https://www.nayuki.io/page/knuth-morris-pratt-string-matching
+    fn find_subsequence<T>(haystack: &[T], needle: &[T]) -> Option<usize>
+    where
+        for<'a> &'a [T]: PartialEq,
+    {
+        haystack
+            .windows(needle.len())
+            .position(|window| window == needle)
     }
 
     fn scramble<R: Rng>(rng: &mut R, game_state: &mut GameState) {
