@@ -198,16 +198,24 @@ fn insert_instruction<R: Rng>(
 
             let absolute_target = min(len + 2 + target as usize, count - 1);
 
-            println!(
-                "restrictions[{:?}] = {:?}",
-                absolute_target,
-                min(restrictions[absolute_target], *stack_depth)
-            );
-            restrictions[absolute_target] = min(restrictions[absolute_target], *stack_depth);
+            add_restriction(restrictions, absolute_target, *stack_depth);
         }
         _ => {
             output.push(instruction);
         }
+    }
+}
+
+fn add_restriction(restrictions: &mut Vec<u8>, index: usize, restriction: u8) {
+    if index < restrictions.len() {
+        println!(
+            "restrictions[{:?}] = {:?}",
+            index,
+            min(restrictions[index], restriction)
+        );
+        restrictions[index] = min(restrictions[index], restriction);
+    } else {
+        println!("restrictions[{:?}] = Kaboom!", index,);
     }
 }
 
@@ -239,10 +247,14 @@ fn generate<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
     output
 }
 
+type Restriction = u8;
+const NON_RESTRICTION: Restriction = 255;
+
 fn generate_containing_instructions<R: Rng>(
     rng: &mut R,
     count: usize,
     required_instructions: &[u8],
+    instruction_restriction: Restriction,
 ) -> Vec<u8> {
     let required_len = required_instructions.len();
     if count <= required_len {
@@ -255,7 +267,7 @@ fn generate_containing_instructions<R: Rng>(
     let mut output = Vec::new();
 
     //TODO:: If count turns out to get very high then this should be a hashmap instead.
-    let mut restrictions = vec![255; count];
+    let mut restrictions = vec![NON_RESTRICTION; count];
 
     let mut stack_depth: u8 = 0;
 
@@ -264,10 +276,19 @@ fn generate_containing_instructions<R: Rng>(
 
         stack_depth = min(stack_depth, restrictions[len]);
 
-        let can_fit_instructions = count - len >= required_len && {
+        let last_instruction_was_not_LITERAL = output.last().map(|&inst| inst != LITERAL).unwrap_or(true);
+
+        let can_fit_instructions = last_instruction_was_not_LITERAL
+        && count - len >= required_len
+        && {
             let mut result = true;
             for &restriction in restrictions[len..len + required_len].iter() {
-                if restriction == 255 || restriction < stack_depth {
+                let is_not_within_restrictions = (restriction != NON_RESTRICTION
+                    && restriction < stack_depth)
+                    || (instruction_restriction != NON_RESTRICTION
+                        && NON_RESTRICTION < stack_depth);
+
+                if is_not_within_restrictions {
                     result = false;
                     break;
                 }
@@ -277,12 +298,23 @@ fn generate_containing_instructions<R: Rng>(
         };
 
         if can_fit_instructions && rng.gen(/*TODO tune this.*/) {
+            println!("stack_depth {} len {}", stack_depth, len);
             for i in 0..required_len {
                 output.push(required_instructions[i]);
-                let index = len + i;
+                let index = len + i + 1;
+                println!(
+                    "index {} {} required_instructions[i] {}",
+                    index,
+                    output.len(),
+                    PrettyInstruction(required_instructions[i])
+                );
                 if index < count {
-                    restrictions[index] = min(restrictions[index], stack_depth);
+                    add_restriction(&mut restrictions, index, stack_depth);
                 }
+            }
+
+            if instruction_restriction != NON_RESTRICTION {
+                stack_depth = stack_depth.saturating_sub(instruction_restriction);
             }
         } else {
             let instruction = generate_instruction_compatible_with_stack_depth(rng, stack_depth);
@@ -303,13 +335,15 @@ fn generate_containing_instructions<R: Rng>(
 
 // We'll define a grab as a series of instructions, that at least some of the time, executes both
 // halves of this conditional.
-const GRAB_INSTRUCTIONS: [u8; 11] = [
+const GRAB_INSTRUCTIONS: [u8; 13] = [
     IF,
-    4,
+    6,
     GET_GRAB_POS,
     GET_GRAB_DEPTH,
     GET_SELECT_POS,
     MOVE_CARDS,
+    DROP,
+    HALT,
     GET_SELECT_POS,
     SET_GRAB_POS,
     GET_SELECT_DEPTH,
@@ -317,13 +351,11 @@ const GRAB_INSTRUCTIONS: [u8; 11] = [
     GRAB,
 ];
 
-const GRAB_INSTRUCTIONS_TRUE_RELATIVES_SIDE_INDICIES: [usize; 5] = [6, 7, 8, 9, 10];
-const GRAB_INSTRUCTIONS_FALSE_RELATIVES_SIDE_INDICIES: [usize; 4] = [2, 3, 4, 5];
+const GRAB_INSTRUCTIONS_TRUE_RELATIVES_SIDE_INDICIES: [usize; 5] = [8, 9, 10, 11, 12];
+const GRAB_INSTRUCTIONS_FALSE_RELATIVES_SIDE_INDICIES: [usize; 6] = [2, 3, 4, 5, 6, 7];
 
 fn generate_grab<R: Rng>(rng: &mut R, count: usize) -> Vec<u8> {
-    let mut output = generate_containing_instructions(rng, count, &GRAB_INSTRUCTIONS);
-
-    output
+    generate_containing_instructions(rng, count, &GRAB_INSTRUCTIONS, 1)
 }
 
 #[allow(dead_code)]
@@ -374,9 +406,28 @@ mod tests {
 
     #[test]
     fn replicate() {
-        let failed_input: (u64, u64) = (72, 53);
+        let failed_input: (u64, u64) = (0, 0);
 
         let mut game_state = GameState::new([0; 16], Some(logger));
+
+        game_state.cells = [
+            vec![15, 18, 20, 22, 6],
+            vec![20, 4, 12, 11, 27],
+            vec![],
+            vec![26, 0, 28, 0, 10],
+            vec![3, 30, 5, 25, 21],
+            vec![],
+            vec![19, 23, 20, 10, 24],
+            vec![13, 0, 14, 10, 7],
+            vec![],
+            vec![],
+            vec![16, 9, 29, 8, 0],
+            vec![],
+            vec![17, 10, 2, 1, 20],
+            vec![],
+            vec![],
+            vec![],
+        ];
 
         let seed = unsafe { std::mem::transmute(failed_input) };
 
@@ -384,15 +435,43 @@ mod tests {
 
         let insructions = generate_grab(&mut rng, TEST_GENERATION_COUNT);
 
-        let pretty_instructions: Vec<_> =
-            insructions.iter().map(|&b| PrettyInstruction(b)).collect();
-        logger(&format!("insructions: {:?}", &pretty_instructions));
+        let possible_base = find_subsequence(&insructions, &GRAB_INSTRUCTIONS);
+
+        let inserted_instruction_base = if let Some(inserted_instruction_base) = possible_base {
+            inserted_instruction_base
+        } else {
+            assert!(possible_base.is_some());
+            0
+        };
+
+        use std::collections::HashSet;
+        let mut visited: HashSet<usize> = HashSet::with_capacity(TEST_GENERATION_COUNT);
 
         for _ in 0..8 {
-            game_state.interpret(&insructions);
+            let just_visited =
+                game_state.interpret_and_return_visited_instruction_pointers(&insructions);
+
+            for &v in just_visited.iter() {
+                visited.insert(v);
+            }
 
             game_state.vm.clear();
         }
+
+        let to_absolute = |&i| i + inserted_instruction_base;
+
+        let was_visited = |i| visited.contains(&i);
+
+        let true_side_executed = GRAB_INSTRUCTIONS_TRUE_RELATIVES_SIDE_INDICIES
+            .iter()
+            .map(to_absolute)
+            .all(was_visited);
+        let false_side_executed = GRAB_INSTRUCTIONS_FALSE_RELATIVES_SIDE_INDICIES
+            .iter()
+            .map(to_absolute)
+            .all(was_visited);
+
+        assert!(true_side_executed && false_side_executed)
     }
 
     quickcheck!{
