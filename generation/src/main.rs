@@ -284,16 +284,16 @@ fn generate_containing_instructions<R: Rng>(
             let mut result = true;
             for &restriction in restrictions[len..len + required_len].iter() {
                 let is_not_within_restrictions = (restriction != NON_RESTRICTION
-                    && restriction < stack_depth)
+                    && stack_depth < restriction)
                     || (instruction_restriction != NON_RESTRICTION
-                        && NON_RESTRICTION < stack_depth);
+                        && stack_depth < instruction_restriction);
 
                 if is_not_within_restrictions {
                     result = false;
                     break;
                 }
             }
-
+            println!("checking {}..{} {}", len, len + required_len, result);
             result
         };
 
@@ -447,7 +447,8 @@ mod tests {
         use std::collections::HashSet;
         let mut visited: HashSet<usize> = HashSet::with_capacity(TEST_GENERATION_COUNT);
 
-        for _ in 0..8 {
+        for i in 0..8 {
+            println!("iteration {:?}", i);
             let just_visited =
                 game_state.interpret_and_return_visited_instruction_pointers(&insructions);
 
