@@ -132,6 +132,54 @@ fn generate_instruction_compatible_with_stack_depth<R: Rng>(rng: &mut R, stack_d
     }
 }
 
+const A_BUTTON_ZERO_PARAM_INSTRUCTION_POOL: [u8; 9] = [
+    // Do I want these?
+    GET_SELECT_POS,
+    GET_SELECT_DEPTH,
+    GET_GRAB_POS,
+    GET_GRAB_DEPTH,
+    //
+    LITERAL,
+    GET_GRAB_CARD_OR_255,
+    GET_DROP_CARD_OR_255,
+    GET_SELECT_DROP,
+    GET_CELL_LEN,
+];
+
+const A_BUTTON_ONE_PARAM_INSTRUCTION_POOL: [u8; 4] = [
+    NOT,
+    FORGET,
+    GET_CARD_NUM,
+    GET_CARD_SUIT,
+];
+
+const A_BUTTON_TWO_PARAM_INSTRUCTION_POOL: [u8; 14] = [
+    ADD, SUB, MUL, DIV, MAX, MIN, AND, OR, EQ, NE, GT, GE, LT, LE,
+];
+
+fn generate_A_button_instruction_compatible_with_stack_depth<R: Rng>(rng: &mut R, stack_depth: u8) -> u8 {
+    lazy_static! {
+        static ref ZERO_RANGE: Uniform<usize> = Uniform::from(0..A_BUTTON_ZERO_PARAM_INSTRUCTION_POOL.len());
+        static ref ONE_RANGE: Uniform<usize> = Uniform::from(0..A_BUTTON_ONE_PARAM_INSTRUCTION_POOL.len());
+        static ref TWO_RANGE: Uniform<usize> = Uniform::from(0..A_BUTTON_TWO_PARAM_INSTRUCTION_POOL.len());
+        static ref ZERO_TO_TWO: Uniform<usize> = Uniform::from(0..3);
+    }
+
+    match stack_depth {
+        0 => A_BUTTON_ZERO_PARAM_INSTRUCTION_POOL[ZERO_RANGE.sample(rng)],
+        1 => if rng.gen() {
+            A_BUTTON_ONE_PARAM_INSTRUCTION_POOL[ONE_RANGE.sample(rng)]
+        } else {
+            A_BUTTON_ZERO_PARAM_INSTRUCTION_POOL[ZERO_RANGE.sample(rng)]
+        },
+        _ => match ZERO_TO_TWO.sample(rng) {
+            0 => A_BUTTON_ZERO_PARAM_INSTRUCTION_POOL[ZERO_RANGE.sample(rng)],
+            1 => A_BUTTON_ONE_PARAM_INSTRUCTION_POOL[ONE_RANGE.sample(rng)],
+            _ => A_BUTTON_TWO_PARAM_INSTRUCTION_POOL[TWO_RANGE.sample(rng)],
+        },
+    }
+}
+
 fn insert_instruction<R: Rng>(
     rng: &mut R,
     output: &mut Vec<u8>,
@@ -271,6 +319,8 @@ fn generate_containing_instructions<R: Rng>(
 
     let mut stack_depth: u8 = 0;
 
+    let mut have_not_inserted = true;
+
     while output.len() < count {
         let len = output.len();
 
@@ -278,7 +328,8 @@ fn generate_containing_instructions<R: Rng>(
 
         let last_instruction_was_not_LITERAL = output.last().map(|&inst| inst != LITERAL).unwrap_or(true);
 
-        let can_fit_instructions = last_instruction_was_not_LITERAL
+        let should_insert_instructions = have_not_inserted
+        && last_instruction_was_not_LITERAL
         && count - len >= required_len
         && {
             let mut result = true;
@@ -295,9 +346,10 @@ fn generate_containing_instructions<R: Rng>(
             }
             println!("checking {}..{} {}", len, len + required_len, result);
             result
-        };
+        }
+        && (count - required_len == len || rng.gen_range(0, count - len) == 0);
 
-        if can_fit_instructions && rng.gen(/*TODO tune this.*/) {
+        if should_insert_instructions {
             println!("stack_depth {} len {}", stack_depth, len);
             for i in 0..required_len {
                 output.push(required_instructions[i]);
@@ -316,8 +368,10 @@ fn generate_containing_instructions<R: Rng>(
             if instruction_restriction != NON_RESTRICTION {
                 stack_depth = stack_depth.saturating_sub(instruction_restriction);
             }
+
+            have_not_inserted = false;
         } else {
-            let instruction = generate_instruction_compatible_with_stack_depth(rng, stack_depth);
+            let instruction = generate_A_button_instruction_compatible_with_stack_depth(rng, stack_depth);
 
             insert_instruction(
                 rng,
@@ -440,23 +494,27 @@ mod tests {
         let inserted_instruction_base = if let Some(inserted_instruction_base) = possible_base {
             inserted_instruction_base
         } else {
-            assert!(possible_base.is_some());
+            assert!(possible_base.is_none());
             0
         };
 
         use std::collections::HashSet;
         let mut visited: HashSet<usize> = HashSet::with_capacity(TEST_GENERATION_COUNT);
 
-        for i in 0..8 {
-            println!("iteration {:?}", i);
-            let just_visited =
-                game_state.interpret_and_return_visited_instruction_pointers(&insructions);
+        for i in 0..16 {
+            game_state.selectpos = i;
 
-            for &v in just_visited.iter() {
-                visited.insert(v);
+            for _ in 0..8 {
+                let just_visited =
+                    game_state.interpret_and_return_visited_instruction_pointers(&insructions);
+
+                for &v in just_visited.iter() {
+                    visited.insert(v);
+                }
+
+                game_state.vm.clear();
             }
 
-            game_state.vm.clear();
         }
 
         let to_absolute = |&i| i + inserted_instruction_base;
@@ -465,12 +523,10 @@ mod tests {
 
         let true_side_executed = GRAB_INSTRUCTIONS_TRUE_RELATIVES_SIDE_INDICIES
             .iter()
-            .map(to_absolute)
-            .all(was_visited);
+            .map(to_absolute).all(was_visited);
         let false_side_executed = GRAB_INSTRUCTIONS_FALSE_RELATIVES_SIDE_INDICIES
             .iter()
-            .map(to_absolute)
-            .all(was_visited);
+            .map(to_absolute).all(was_visited);
 
         assert!(true_side_executed && false_side_executed)
     }
@@ -531,15 +587,20 @@ mod tests {
             use std::collections::HashSet;
             let mut visited: HashSet<usize> = HashSet::with_capacity(TEST_GENERATION_COUNT);
 
-            for _ in 0..8 {
-                let just_visited =
-                    game_state.interpret_and_return_visited_instruction_pointers(&insructions);
+            for i in 0..16 {
+                game_state.selectpos = i;
 
-                for &v in just_visited.iter() {
-                    visited.insert(v);
+                for _ in 0..8 {
+                    let just_visited =
+                        game_state.interpret_and_return_visited_instruction_pointers(&insructions);
+
+                    for &v in just_visited.iter() {
+                        visited.insert(v);
+                    }
+
+                    game_state.vm.clear();
                 }
 
-                game_state.vm.clear();
             }
 
             let to_absolute = |&i| i + inserted_instruction_base;
