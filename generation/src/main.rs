@@ -132,28 +132,26 @@ fn generate_instruction_compatible_with_stack_depth<R: Rng>(rng: &mut R, stack_d
     }
 }
 
-const GRAB_ZERO_PARAM_INSTRUCTION_POOL: [u8; 3] = [
-    GET_GRAB_CARD_OR_255,
-    GET_DROP_CARD_OR_255,
-    GET_SELECT_DROP,
-];
+const GRAB_ZERO_PARAM_INSTRUCTION_POOL: [u8; 3] =
+    [GET_GRAB_CARD_OR_255, GET_DROP_CARD_OR_255, GET_SELECT_DROP];
 
-const GRAB_ONE_PARAM_INSTRUCTION_POOL: [u8; 4] = [
-    NOT,
-    FORGET,
-    GET_CARD_NUM,
-    GET_CARD_SUIT,
-];
+const GRAB_ONE_PARAM_INSTRUCTION_POOL: [u8; 4] = [NOT, FORGET, GET_CARD_NUM, GET_CARD_SUIT];
 
 const GRAB_TWO_PARAM_INSTRUCTION_POOL: [u8; 14] = [
     ADD, SUB, MUL, DIV, MAX, MIN, AND, OR, EQ, NE, GT, GE, LT, LE,
 ];
 
-fn generate_A_button_instruction_compatible_with_stack_depth<R: Rng>(rng: &mut R, stack_depth: u8) -> u8 {
+fn generate_A_button_instruction_compatible_with_stack_depth<R: Rng>(
+    rng: &mut R,
+    stack_depth: u8,
+) -> u8 {
     lazy_static! {
-        static ref ZERO_RANGE: Uniform<usize> = Uniform::from(0..GRAB_ZERO_PARAM_INSTRUCTION_POOL.len());
-        static ref ONE_RANGE: Uniform<usize> = Uniform::from(0..GRAB_ONE_PARAM_INSTRUCTION_POOL.len());
-        static ref TWO_RANGE: Uniform<usize> = Uniform::from(0..GRAB_TWO_PARAM_INSTRUCTION_POOL.len());
+        static ref ZERO_RANGE: Uniform<usize> =
+            Uniform::from(0..GRAB_ZERO_PARAM_INSTRUCTION_POOL.len());
+        static ref ONE_RANGE: Uniform<usize> =
+            Uniform::from(0..GRAB_ONE_PARAM_INSTRUCTION_POOL.len());
+        static ref TWO_RANGE: Uniform<usize> =
+            Uniform::from(0..GRAB_TWO_PARAM_INSTRUCTION_POOL.len());
         static ref ZERO_TO_TWO: Uniform<usize> = Uniform::from(0..3);
     }
 
@@ -318,12 +316,12 @@ fn generate_containing_instructions<R: Rng>(
 
         stack_depth = min(stack_depth, restrictions[len]);
 
-        let last_instruction_was_not_LITERAL = output.last().map(|&inst| inst != LITERAL).unwrap_or(true);
+        let last_instruction_was_not_LITERAL =
+            output.last().map(|&inst| inst != LITERAL).unwrap_or(true);
 
         let should_insert_instructions = have_not_inserted
-        && last_instruction_was_not_LITERAL
-        && count - len >= required_len
-        && {
+            && last_instruction_was_not_LITERAL
+            && count - len >= required_len && {
             let mut result = true;
             for &restriction in restrictions[len..len + required_len].iter() {
                 let is_not_within_restrictions = (restriction != NON_RESTRICTION
@@ -339,7 +337,7 @@ fn generate_containing_instructions<R: Rng>(
             println!("checking {}..{} {}", len, len + required_len, result);
             result
         }
-        && (count - required_len == len || rng.gen_range(0, count - len) == 0);
+            && (count - required_len == len || rng.gen_range(0, count - len) == 0);
 
         if should_insert_instructions {
             println!("stack_depth {} len {}", stack_depth, len);
@@ -363,7 +361,8 @@ fn generate_containing_instructions<R: Rng>(
 
             have_not_inserted = false;
         } else {
-            let instruction = generate_A_button_instruction_compatible_with_stack_depth(rng, stack_depth);
+            let instruction =
+                generate_A_button_instruction_compatible_with_stack_depth(rng, stack_depth);
 
             insert_instruction(
                 rng,
@@ -506,7 +505,6 @@ mod tests {
 
                 game_state.vm.clear();
             }
-
         }
 
         let to_absolute = |&i| i + inserted_instruction_base;
@@ -515,10 +513,12 @@ mod tests {
 
         let true_side_executed = GRAB_INSTRUCTIONS_TRUE_RELATIVES_SIDE_INDICIES
             .iter()
-            .map(to_absolute).all(was_visited);
+            .map(to_absolute)
+            .all(was_visited);
         let false_side_executed = GRAB_INSTRUCTIONS_FALSE_RELATIVES_SIDE_INDICIES
             .iter()
-            .map(to_absolute).all(was_visited);
+            .map(to_absolute)
+            .all(was_visited);
 
         assert!(true_side_executed && false_side_executed)
     }
@@ -557,6 +557,71 @@ mod tests {
 
             //didn't panic
             true
+        }
+
+        fn generate_true_side_executed_before_false(p: ((u64, u64), ArbGameState)) -> bool {
+            let (pre_seed, ArbGameState(mut game_state)) = p;
+
+            let seed = unsafe { std::mem::transmute(pre_seed) };
+
+            let mut rng = XorShiftRng::from_seed(seed);
+
+            let insructions = generate_grab(&mut rng, TEST_GENERATION_COUNT);
+
+            let possible_base = find_subsequence(&insructions, &GRAB_INSTRUCTIONS);
+
+            let inserted_instruction_base = if let Some(inserted_instruction_base) = possible_base {
+                inserted_instruction_base
+            } else {
+                return false;
+            };
+
+            use std::collections::HashSet;
+            let mut visited: HashSet<usize> = HashSet::with_capacity(TEST_GENERATION_COUNT);
+
+            let to_absolute = |&i| i + inserted_instruction_base;
+
+            let mut might_pass = false;
+
+            for i in 0..16 {
+                game_state.selectpos = i;
+
+                for _ in 0..8 {
+                    let just_visited =
+                        game_state.interpret_and_return_visited_instruction_pointers(&insructions);
+
+                    for &v in just_visited.iter() {
+                        visited.insert(v);
+                    }
+
+                    let was_visited = |i| visited.contains(&i);
+
+                    let true_side_executed = GRAB_INSTRUCTIONS_TRUE_RELATIVES_SIDE_INDICIES
+                        .iter()
+                        .map(to_absolute).all(was_visited);
+                    let false_side_executed = GRAB_INSTRUCTIONS_FALSE_RELATIVES_SIDE_INDICIES
+                        .iter()
+                        .map(to_absolute).all(was_visited);
+
+                    if true_side_executed && !false_side_executed {
+                        might_pass = true;
+                    }
+
+                    game_state.vm.clear();
+                }
+
+            }
+
+            let was_visited = |i| visited.contains(&i);
+
+            let true_side_executed = GRAB_INSTRUCTIONS_TRUE_RELATIVES_SIDE_INDICIES
+                .iter()
+                .map(to_absolute).all(was_visited);
+            let false_side_executed = GRAB_INSTRUCTIONS_FALSE_RELATIVES_SIDE_INDICIES
+                .iter()
+                .map(to_absolute).all(was_visited);
+
+            might_pass && true_side_executed && false_side_executed
         }
 
         fn generate_grab_executes_both_halves(p: ((u64, u64), ArbGameState)) -> bool {
