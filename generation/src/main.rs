@@ -8,7 +8,7 @@ use rand::{
     distributions::{Distribution, Uniform}, Rng, SeedableRng, XorShiftRng,
 };
 
-use std::cmp::min;
+use std::cmp::{max, min};
 
 const INSTRUCTION_POOL: [u8; 47] = [
     NO_OP,
@@ -152,7 +152,7 @@ fn generate_A_button_instruction_compatible_with_stack_depth<R: Rng>(
             Uniform::from(0..GRAB_ONE_PARAM_INSTRUCTION_POOL.len());
         static ref TWO_RANGE: Uniform<usize> =
             Uniform::from(0..GRAB_TWO_PARAM_INSTRUCTION_POOL.len());
-        static ref ZERO_TO_TWO: Uniform<usize> = Uniform::from(0..3);
+        static ref UNRESTRICTED: Uniform<usize> = Uniform::from(0..3);
     }
 
     match stack_depth {
@@ -162,7 +162,7 @@ fn generate_A_button_instruction_compatible_with_stack_depth<R: Rng>(
         } else {
             GRAB_ZERO_PARAM_INSTRUCTION_POOL[ZERO_RANGE.sample(rng)]
         },
-        _ => match ZERO_TO_TWO.sample(rng) {
+        _ => match UNRESTRICTED.sample(rng) {
             0 => GRAB_ZERO_PARAM_INSTRUCTION_POOL[ZERO_RANGE.sample(rng)],
             1 => GRAB_ONE_PARAM_INSTRUCTION_POOL[ONE_RANGE.sample(rng)],
             _ => GRAB_TWO_PARAM_INSTRUCTION_POOL[TWO_RANGE.sample(rng)],
@@ -320,6 +320,7 @@ fn generate_containing_instructions<R: Rng>(
             output.last().map(|&inst| inst != LITERAL).unwrap_or(true);
 
         let should_insert_instructions = have_not_inserted
+            && len > max(count / 2, count - (required_len * 2))
             && last_instruction_was_not_LITERAL
             && count - len >= required_len && {
             let mut result = true;
@@ -451,34 +452,39 @@ mod tests {
 
     #[test]
     fn replicate() {
-        let failed_input: (u64, u64) = (0, 0);
+        let failed_input: (u64, u64) = (0, 1);
 
-        let mut game_state = GameState::new([0; 16], Some(logger));
+        let mut game_state = GameState::new([0; 16], None);
 
         game_state.cells = [
-            vec![15, 18, 20, 22, 6],
-            vec![20, 4, 12, 11, 27],
-            vec![],
-            vec![26, 0, 28, 0, 10],
-            vec![3, 30, 5, 25, 21],
-            vec![],
-            vec![19, 23, 20, 10, 24],
-            vec![13, 0, 14, 10, 7],
-            vec![],
-            vec![],
-            vec![16, 9, 29, 8, 0],
-            vec![],
-            vec![17, 10, 2, 1, 20],
+            vec![18, 21, 10, 15, 11],
+            vec![20, 2, 20, 23, 8],
+            vec![20, 25, 4, 12, 28],
+            vec![10, 26, 10, 13, 24],
             vec![],
             vec![],
             vec![],
+            vec![],
+            vec![17, 0, 16, 20, 6],
+            vec![],
+            vec![27, 7, 0, 0, 14],
+            vec![],
+            vec![],
+            vec![10, 3, 19, 5, 0],
+            vec![],
+            vec![9, 1, 29, 30, 22],
         ];
+
+        game_state.selectpos = 0;
+        game_state.selectdepth = 4;
 
         let seed = unsafe { std::mem::transmute(failed_input) };
 
         let mut rng = XorShiftRng::from_seed(seed);
 
         let insructions = generate_grab(&mut rng, TEST_GENERATION_COUNT);
+
+        print_instructions(&insructions);
 
         let possible_base = find_subsequence(&insructions, &GRAB_INSTRUCTIONS);
 
@@ -801,12 +807,17 @@ fn main() {
 
     let mut rng = XorShiftRng::from_seed(seed);
 
-    let mut output = String::new();
+    let instructions = generate_grab(&mut rng, 200);
+
+    print_instructions(&instructions);
+}
+
+fn print_instructions(instructions: &Vec<u8>) {
+    let mut output = String::with_capacity(instructions.len() * 16);
 
     output.push('[');
     output.push('\n');
 
-    let instructions = generate_grab(&mut rng, 200);
     for &instruction in instructions.iter() {
         output.push_str(&format!("    {},\n", PrettyInstruction(instruction)));
     }
