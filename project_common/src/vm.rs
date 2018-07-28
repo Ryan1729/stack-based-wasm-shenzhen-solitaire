@@ -194,6 +194,12 @@ pub mod instructions {
 
         pub const ASSERT_EMPTY_STACK: u8 = 0b1111_0000;
 
+        pub const GET_GRAB_CARD_NUM_OR_255: u8 = 0b1111_0010;
+        pub const GET_DROP_CARD_NUM_OR_255: u8 = 0b1111_0011;
+
+        pub const GET_GRAB_CARD_SUIT_OR_255: u8 = 0b1111_0110;
+        pub const GET_DROP_CARD_SUIT_OR_255: u8 = 0b1111_0111;
+
         pub const GET_CARD_NUM: u8 = 0b1111_1000;
         pub const GET_CARD_SUIT: u8 = 0b1111_1001;
         pub const GET_GRAB_CARD_OR_255: u8 = 0b1111_1010;
@@ -470,6 +476,34 @@ impl GameState {
             ASSERT_EMPTY_STACK => {
                 assert!(self.vm.is_empty(), "ASSERT_EMPTY_STACK failed!");
             }
+            GET_GRAB_CARD_NUM_OR_255 => {
+                let card = self.get_grab_card_or_255();
+
+                let output = if card == 255 { 255 } else { getcardnum(card) };
+
+                self.vm.push(output);
+            }
+            GET_DROP_CARD_NUM_OR_255 => {
+                let card = self.get_drop_card_or_255();
+
+                let output = if card == 255 { 255 } else { getcardnum(card) };
+
+                self.vm.push(output);
+            }
+            GET_GRAB_CARD_SUIT_OR_255 => {
+                let card = self.get_grab_card_or_255();
+
+                let output = if card == 255 { 255 } else { getsuit(card) };
+
+                self.vm.push(output);
+            }
+            GET_DROP_CARD_SUIT_OR_255 => {
+                let card = self.get_drop_card_or_255();
+
+                let output = if card == 255 { 255 } else { getsuit(card) };
+
+                self.vm.push(output);
+            }
             GET_CARD_NUM => {
                 let card = self.vm.pop();
                 self.vm.push(getcardnum(card));
@@ -479,31 +513,12 @@ impl GameState {
                 self.vm.push(getsuit(card));
             }
             GET_GRAB_CARD_OR_255 => {
-                let grabpos = self.grabpos as usize & 15;
-                let grabdepth = self.grabdepth as usize;
-                let cells = &self.cells;
-
-                let len = cells[grabpos].len();
-                let output = if len == 0 || len - 1 < grabdepth {
-                    255
-                } else {
-                    cells[grabpos][len - 1 - grabdepth]
-                };
+                let output = self.get_grab_card_or_255();
 
                 self.vm.push(output);
             }
             GET_DROP_CARD_OR_255 => {
-                let droppos = self.selectpos as usize & 15;
-                let cells = &self.cells;
-
-                let output = {
-                    let len = cells[droppos].len();
-                    if len == 0 {
-                        255
-                    } else {
-                        last_unchecked!(cells[droppos])
-                    }
-                };
+                let output = self.get_drop_card_or_255();
 
                 self.vm.push(output);
             }
@@ -523,6 +538,31 @@ impl GameState {
             }
             HALT => *instruction_pointer = bytecode.len() - 1,
             _ => unimplemented!(),
+        }
+    }
+
+    fn get_grab_card_or_255(&self) -> u8 {
+        let grabpos = self.grabpos as usize & 15;
+        let grabdepth = self.grabdepth as usize;
+        let cells = &self.cells;
+
+        let len = cells[grabpos].len();
+        if len == 0 || len - 1 < grabdepth {
+            255
+        } else {
+            cells[grabpos][len - 1 - grabdepth]
+        }
+    }
+
+    fn get_drop_card_or_255(&self) -> u8 {
+        let droppos = self.selectpos as usize & 15;
+        let cells = &self.cells;
+
+        let len = cells[droppos].len();
+        if len == 0 {
+            255
+        } else {
+            last_unchecked!(cells[droppos])
         }
     }
 }
