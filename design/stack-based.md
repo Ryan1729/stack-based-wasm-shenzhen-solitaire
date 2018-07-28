@@ -31,3 +31,9 @@ So first we need to decide which game we want to try and implement in bytecode. 
 What would be required to be part of the bytecode to allow that? All the foundation pile checking which includes more or less all of the update functions except for `movecards`. Since we would need to make the `canmovedragons` part of the bytecode we would need to have a way for the bytecode to indicate which buttons can be pushed since the drawing code needs to know that. That is, assuming we want to allow moving dragons to the flower foundation. If we don't want to do that, then we can postpone that for later, but since it would increase the amount of possible games greatly, (three buttons that can run bytecode under arbitrary bytecode-checkable conditions!), that would be a good area to expand the bytecode into eventually.
 
 In summary, we should convert everything called from the input if-else block in `update`, including `automove` except for `canmovedragons` and `movedragons`.
+
+__
+
+I've tried generating bytecode and I'm finding it increasingly difficult to make smaller and smaller improvements to the generation. One potential way to make improving the generation easier would be to redesign the bytecode itself towards that purpose. 
+
+That is, I can design a way to express the space of interesting card laying predicates and then select between them.
