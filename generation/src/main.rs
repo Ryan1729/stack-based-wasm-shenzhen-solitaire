@@ -157,7 +157,7 @@ const GRAB_TWO_PARAM_INSTRUCTION_POOL: [u8; 14] = [
 fn generate_A_button_instruction_compatible_with_stack_depth<R: Rng>(
     rng: &mut R,
     stack_depth: u8,
-    (len, count): (u8, u8),
+    (len, count): (usize, usize),
 ) -> u8 {
     lazy_static! {
         static ref ZERO_RANGE: Uniform<usize> =
@@ -201,8 +201,24 @@ fn insert_instruction<R: Rng>(
     let len = output.len();
 
     match instruction {
-        GET_SELECT_POS | GET_SELECT_DEPTH | GET_GRAB_POS | GET_GRAB_DEPTH | LITERAL | CAN_GRAB
-        | GET_GRAB_CARD_OR_255 | GET_DROP_CARD_OR_255 | GET_SELECT_DROP | GET_CELL_LEN => {
+        NOT | NO_OP | GET_CARD_SUIT | GET_CARD_NUM | GRAB | DROP | HALT | FILL_MOVE_TIMER
+        | JUMP | HANDLE_BUTTON_PRESS => {
+            // *stack_depth += 0;
+        }
+        GET_SELECT_POS
+        | GET_SELECT_DEPTH
+        | GET_GRAB_POS
+        | GET_GRAB_DEPTH
+        | LITERAL
+        | CAN_GRAB
+        | GET_GRAB_CARD_OR_255
+        | GET_DROP_CARD_OR_255
+        | GET_SELECT_DROP
+        | GET_CELL_LEN
+        | GET_GRAB_CARD_NUM_OR_255
+        | GET_GRAB_CARD_SUIT_OR_255
+        | GET_DROP_CARD_NUM_OR_255
+        | GET_DROP_CARD_SUIT_OR_255 => {
             let previous_instruction = output.last().cloned().unwrap_or(NO_OP);
             if previous_instruction != LITERAL {
                 *stack_depth += 1;
@@ -218,7 +234,7 @@ fn insert_instruction<R: Rng>(
         MOVE_CARDS => {
             *stack_depth -= 3;
         }
-        _ => {}
+        _ => unimplemented!("inserting {} ", PrettyInstruction(instruction)),
     }
 
     match instruction {
@@ -351,11 +367,17 @@ fn generate_containing_instructions<R: Rng>(
                         && stack_depth < instruction_restriction);
 
                 if is_not_within_restrictions {
+                    println!(
+                        "{}..{} failed at depth {}",
+                        len,
+                        len + required_len,
+                        stack_depth
+                    );
+
                     result = false;
                     break;
                 }
             }
-            println!("checking {}..{} {}", len, len + required_len, result);
             result
         }
             && (count - required_len == len || rng.gen_range(0, count - len) == 0);
@@ -662,6 +684,8 @@ mod tests {
             let mut rng = XorShiftRng::from_seed(seed);
 
             let insructions = generate_grab(&mut rng, TEST_GENERATION_COUNT);
+
+            print_instructions(&insructions);
 
             let possible_base = find_subsequence(&insructions, &GRAB_INSTRUCTIONS);
 
