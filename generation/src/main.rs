@@ -497,7 +497,7 @@ mod tests {
 
     #[test]
     fn replicate() {
-        let failed_input: (u64, u64) = (12, 15);
+        let failed_input: (u64, u64) = (0, 0);
 
         let mut game_state = GameState::new([0; 16], None);
 
@@ -533,9 +533,47 @@ mod tests {
 
         print_instructions(&instructions);
 
-        let base = find_subsequence(&instructions, &GRAB_INSTRUCTIONS);
+        let possible_base = find_subsequence(&instructions, &GRAB_INSTRUCTIONS);
 
-        assert!(base.is_some())
+        let inserted_instruction_base = if let Some(inserted_instruction_base) = possible_base {
+            inserted_instruction_base
+        } else {
+            assert!(false);
+            0
+        };
+
+        use std::collections::HashSet;
+        let mut visited: HashSet<usize> = HashSet::with_capacity(TEST_GENERATION_COUNT);
+
+        for i in 0..16 {
+            game_state.selectpos = i;
+
+            for _ in 0..8 {
+                let just_visited =
+                    game_state.interpret_and_return_visited_instruction_pointers(&instructions);
+
+                for &v in just_visited.iter() {
+                    visited.insert(v);
+                }
+
+                game_state.vm.clear();
+            }
+        }
+
+        let to_absolute = |&i| i + inserted_instruction_base;
+
+        let was_visited = |i| visited.contains(&i);
+
+        let true_side_executed = GRAB_INSTRUCTIONS_TRUE_RELATIVE_SIDE_INDICIES
+            .iter()
+            .map(to_absolute)
+            .all(was_visited);
+        let false_side_executed = GRAB_INSTRUCTIONS_FALSE_RELATIVE_SIDE_INDICIES
+            .iter()
+            .map(to_absolute)
+            .all(was_visited);
+
+        assert!(true_side_executed && false_side_executed)
     }
 
     quickcheck!{
