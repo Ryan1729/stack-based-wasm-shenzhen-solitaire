@@ -262,7 +262,7 @@ fn update(state: &mut GameState, input: Input) {
                     LITERAL,
                     BUTTON_COLUMN,
                     LT_BRANCH,
-                    75, //A
+                    76, //A
                     GET_SELECT_POS,
                     LITERAL,
                     FLOWER_FOUNDATION,
@@ -279,7 +279,7 @@ fn update(state: &mut GameState, input: Input) {
                     GE,
                     OR,
                     IF,
-                    35, //B
+                    36, //B
                     GET_GRAB_DEPTH,
                     NOT,
                     IF,
@@ -293,7 +293,7 @@ fn update(state: &mut GameState, input: Input) {
                     1,
                     EQ,
                     JUMP,
-                    53, //END
+                    54, //END
                     GET_DROP_CARD_OR_255,
                     LITERAL,
                     255,
@@ -313,7 +313,7 @@ fn update(state: &mut GameState, input: Input) {
                     AND,
                     AND,
                     JUMP,
-                    33,                   //END
+                    34,                   //END
                     GET_DROP_CARD_OR_255, //B
                     LITERAL,
                     255,
@@ -322,7 +322,7 @@ fn update(state: &mut GameState, input: Input) {
                     LITERAL,
                     255,
                     JUMP,
-                    24, // END
+                    25, // END
                     GET_GRAB_CARD_SUIT_OR_255,
                     GET_DROP_CARD_SUIT_OR_255,
                     NE,
