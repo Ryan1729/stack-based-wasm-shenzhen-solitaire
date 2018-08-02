@@ -193,6 +193,7 @@ pub mod instructions {
         pub const HANDLE_BUTTON_PRESS: u8 = 0b1110_0001;
 
         pub const ASSERT_EMPTY_STACK: u8 = 0b1111_0000;
+        pub const HALT_IF: u8 = 0b1111_0001;
 
         pub const GET_GRAB_CARD_NUM_OR_255: u8 = 0b1111_0010;
         pub const GET_DROP_CARD_NUM_OR_255: u8 = 0b1111_0011;
@@ -283,6 +284,12 @@ impl GameState {
                 } else {
                     0
                 }
+            };
+        }
+
+        macro_rules! halt {
+            () => {
+                *instruction_pointer = bytecode.len() - 1
             };
         }
 
@@ -476,6 +483,12 @@ impl GameState {
             ASSERT_EMPTY_STACK => {
                 assert!(self.vm.is_empty(), "ASSERT_EMPTY_STACK failed!");
             }
+            HALT_IF => {
+                let a = self.vm.pop();
+                if a != 0 {
+                    halt!();
+                }
+            }
             GET_GRAB_CARD_NUM_OR_255 => {
                 let card = self.get_grab_card_or_255();
 
@@ -536,7 +549,7 @@ impl GameState {
                 self.vm
                     .push(self.cells[self.selectpos as usize & 15].len() as u8);
             }
-            HALT => *instruction_pointer = bytecode.len() - 1,
+            HALT => halt!(),
             _ => unimplemented!(),
         }
     }
