@@ -243,7 +243,7 @@ fn update(state: &mut GameState, input: Input) {
                     IF,
                     8,
                     CAN_GRAB,
-                    HALT_IF,
+                    HALT_UNLESS,
                     GET_SELECT_POS,
                     SET_GRAB_POS,
                     GET_SELECT_DEPTH,
@@ -280,7 +280,7 @@ fn update(state: &mut GameState, input: Input) {
                     34, //B
                     GET_GRAB_DEPTH,
                     NOT,
-                    HALT_IF,
+                    HALT_UNLESS,
                     GET_CELL_LEN,
                     IF,
                     7,
