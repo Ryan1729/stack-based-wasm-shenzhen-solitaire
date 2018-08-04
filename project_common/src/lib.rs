@@ -1,3 +1,4 @@
+#![recursion_limit = "128"] //for a macro in vm.rs
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 

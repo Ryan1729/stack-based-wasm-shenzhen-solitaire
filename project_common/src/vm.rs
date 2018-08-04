@@ -104,6 +104,9 @@ impl VM {
     }
 }
 
+pub const NAME_FN_DEFAULT: &'static str = "unknown";
+
+//This one here is why we raised the `recursion_limit`.
 macro_rules! consts_and_name_fn {
     ($name:ident, $const_type:ty, $($tokens:tt)*) => {
         $($tokens)*
@@ -111,7 +114,7 @@ macro_rules! consts_and_name_fn {
         pub fn $name(c: $const_type) -> &'static str {
             consts_and_name_fn!(c, $($tokens)*);
 
-            "unknown"
+            NAME_FN_DEFAULT
         }
     };
     ($c:ident, pub const $const_name:ident: $const_type:ty = $value:expr; $($tokens:tt)*) => {
@@ -128,6 +131,8 @@ macro_rules! consts_and_name_fn {
 }
 
 pub mod instructions {
+    use vm::NAME_FN_DEFAULT;
+
     consts_and_name_fn!{
         instruction_name, u8,
         pub const NO_OP: u8 = 0;
@@ -192,8 +197,8 @@ pub mod instructions {
         pub const CAN_GRAB: u8 = 0b1110_0000;
         pub const HANDLE_BUTTON_PRESS: u8 = 0b1110_0001;
 
-        pub const ASSERT_EMPTY_STACK: u8 = 0b1111_0000;
-        pub const HALT_UNLESS: u8 = 0b1111_0001;
+        pub const ASSERT_EMPTY_STACK: u8 = 0b1110_1000;
+        pub const HALT_UNLESS: u8 = 0b1110_1001;
 
         pub const GET_GRAB_CARD_OR_HALT: u8 = 0b1111_0000;
         pub const GET_DROP_CARD_OR_HALT: u8 = 0b1111_0001;
@@ -216,6 +221,7 @@ pub mod instructions {
 }
 pub use self::instructions::*;
 
+#[derive(PartialEq, Eq, Hash)]
 pub struct PrettyInstruction(pub u8);
 
 impl fmt::Display for PrettyInstruction {
@@ -226,7 +232,12 @@ impl fmt::Display for PrettyInstruction {
 
 impl fmt::Debug for PrettyInstruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", instruction_name(self.0))
+        let name = instruction_name(self.0);
+        if name == NAME_FN_DEFAULT {
+            write!(f, "{} ({})", name, self.0)
+        } else {
+            write!(f, "{}", name)
+        }
     }
 }
 
@@ -343,11 +354,7 @@ impl GameState {
             DIV => {
                 let b = self.vm.pop();
                 let a = self.vm.pop();
-                self.vm.push(if b != 0 {
-                    a.wrapping_div(b)
-                } else {
-                    255
-                });
+                self.vm.push(if b != 0 { a.wrapping_div(b) } else { 255 });
             }
             MAX => {
                 let b = self.vm.pop();
