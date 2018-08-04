@@ -195,6 +195,9 @@ pub mod instructions {
         pub const ASSERT_EMPTY_STACK: u8 = 0b1111_0000;
         pub const HALT_UNLESS: u8 = 0b1111_0001;
 
+        pub const GET_GRAB_CARD_OR_HALT: u8 = 0b1111_0000;
+        pub const GET_DROP_CARD_OR_HALT: u8 = 0b1111_0001;
+
         pub const GET_GRAB_CARD_NUM_OR_255: u8 = 0b1111_0010;
         pub const GET_DROP_CARD_NUM_OR_255: u8 = 0b1111_0011;
 
@@ -487,6 +490,24 @@ impl GameState {
                 let a = self.vm.pop();
                 if a == 0 {
                     halt!();
+                }
+            }
+            GET_GRAB_CARD_OR_HALT => {
+                let card = self.get_grab_card_or_255();
+
+                if card == 255 {
+                    halt!()
+                } else {
+                    self.vm.push(card);
+                }
+            }
+            GET_DROP_CARD_OR_HALT => {
+                let card = self.get_drop_card_or_255();
+
+                if card == 255 {
+                    halt!()
+                } else {
+                    self.vm.push(card);
                 }
             }
             GET_GRAB_CARD_NUM_OR_255 => {

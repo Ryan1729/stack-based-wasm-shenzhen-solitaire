@@ -250,17 +250,12 @@ fn update(state: &mut GameState, input: Input) {
                     SET_GRAB_DEPTH,
                     GRAB,
                     HALT,
-                    GET_GRAB_CARD_OR_255,
-                    LITERAL,
-                    255,
-                    NE_BRANCH,
-                    1,
-                    HALT,
+                    GET_GRAB_CARD_OR_HALT,
                     GET_SELECT_POS,
                     LITERAL,
                     BUTTON_COLUMN,
                     LT_BRANCH,
-                    72, //A
+                    67, //A
                     GET_SELECT_POS,
                     LITERAL,
                     FLOWER_FOUNDATION,
@@ -277,7 +272,7 @@ fn update(state: &mut GameState, input: Input) {
                     GE,
                     OR,
                     IF,
-                    32, //B
+                    27, //B
                     GET_GRAB_DEPTH,
                     NOT,
                     HALT_UNLESS,
@@ -289,13 +284,8 @@ fn update(state: &mut GameState, input: Input) {
                     1,
                     EQ,
                     JUMP,
-                    54, //END
-                    GET_DROP_CARD_OR_255,
-                    LITERAL,
-                    255,
-                    NE_BRANCH,
-                    1,
-                    HALT,
+                    49, //END
+                    GET_DROP_CARD_OR_HALT,
                     GET_GRAB_CARD_SUIT_OR_255,
                     GET_DROP_CARD_SUIT_OR_255,
                     EQ,
@@ -342,9 +332,7 @@ fn update(state: &mut GameState, input: Input) {
                     0,
                     EQ,
                     AND,
-                    IF, //END
-                    1,
-                    HALT,
+                    HALT_UNLESS, //END
                     GET_GRAB_POS,
                     GET_GRAB_DEPTH,
                     GET_SELECT_POS,
