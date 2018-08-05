@@ -29,13 +29,12 @@ fn main() {
         LITERAL,
         BUTTON_COLUMN,
         LT_BRANCH,
-        67, //A
+        62, //A
         GET_SELECT_POS,
         LITERAL,
         FLOWER_FOUNDATION,
-        GT_BRANCH,
-        1,
-        HALT,
+        GT,
+        HALT_UNLESS,
         GET_SELECT_POS,
         LITERAL,
         START_OF_FOUNDATIONS,
@@ -55,10 +54,10 @@ fn main() {
         6,
         GET_GRAB_CARD_NUM_OR_255,
         LITERAL,
-        1,
+        10,
         EQ,
         JUMP,
-        49, //END
+        41, //END
         GET_DROP_CARD_OR_HALT,
         GET_GRAB_CARD_SUIT_OR_255,
         GET_DROP_CARD_SUIT_OR_255,
@@ -73,16 +72,12 @@ fn main() {
         AND,
         AND,
         JUMP,
-        32,                   //END
+        24,                   //END
         GET_DROP_CARD_OR_255, //B
         LITERAL,
         255,
-        NE_BRANCH,
-        4,
-        LITERAL,
-        255,
-        JUMP,
-        23, // END
+        EQ_BRANCH,
+        20, //PAST END CHECK
         GET_GRAB_CARD_SUIT_OR_255,
         GET_DROP_CARD_SUIT_OR_255,
         NE,
@@ -96,18 +91,14 @@ fn main() {
         AND,
         AND,
         JUMP,
-        9,            //END
+        5,            //END
         GET_CELL_LEN, //A
-        LITERAL,
-        0,
-        EQ,
+        NOT,
         GET_GRAB_DEPTH,
-        LITERAL,
-        0,
-        EQ,
+        NOT,
         AND,
-        HALT_UNLESS, //END
-        GET_GRAB_POS,
+        HALT_UNLESS,  //END
+        GET_GRAB_POS, //PAST END CHECK
         GET_GRAB_DEPTH,
         GET_SELECT_POS,
         MOVE_CARDS,

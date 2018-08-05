@@ -255,13 +255,12 @@ fn update(state: &mut GameState, input: Input) {
                     LITERAL,
                     BUTTON_COLUMN,
                     LT_BRANCH,
-                    67, //A
+                    62, //A
                     GET_SELECT_POS,
                     LITERAL,
                     FLOWER_FOUNDATION,
-                    GT_BRANCH,
-                    1,
-                    HALT,
+                    GT,
+                    HALT_UNLESS,
                     GET_SELECT_POS,
                     LITERAL,
                     START_OF_FOUNDATIONS,
@@ -284,7 +283,7 @@ fn update(state: &mut GameState, input: Input) {
                     1,
                     EQ,
                     JUMP,
-                    45, //END
+                    41, //END
                     GET_DROP_CARD_OR_HALT,
                     GET_GRAB_CARD_SUIT_OR_255,
                     GET_DROP_CARD_SUIT_OR_255,
@@ -299,16 +298,12 @@ fn update(state: &mut GameState, input: Input) {
                     AND,
                     AND,
                     JUMP,
-                    28,                   //END
+                    24,                   //END
                     GET_DROP_CARD_OR_255, //B
                     LITERAL,
                     255,
-                    NE_BRANCH,
-                    4,
-                    LITERAL,
-                    255,
-                    JUMP,
-                    19, // END
+                    EQ_BRANCH,
+                    20, //PAST END CHECK
                     GET_GRAB_CARD_SUIT_OR_255,
                     GET_DROP_CARD_SUIT_OR_255,
                     NE,
@@ -328,8 +323,8 @@ fn update(state: &mut GameState, input: Input) {
                     GET_GRAB_DEPTH,
                     NOT,
                     AND,
-                    HALT_UNLESS, //END
-                    GET_GRAB_POS,
+                    HALT_UNLESS,  //END
+                    GET_GRAB_POS, //PAST END CHECK
                     GET_GRAB_DEPTH,
                     GET_SELECT_POS,
                     MOVE_CARDS,
