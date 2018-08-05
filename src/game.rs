@@ -7,7 +7,7 @@ macro_rules! last_unchecked {
     };
 }
 
-use std::cmp::{max, min};
+use std::cmp::max;
 
 fn update(state: &mut GameState, input: Input) {
     if haswon(state) {

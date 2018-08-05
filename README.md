@@ -30,7 +30,7 @@ Use z, x, and the arrow keys to play. If you win, you can press Enter to deal an
 
 4. Build it:
 
-       $ cargo web start --target wasm32-unknown-unknown --release
+       $ cargo web start --target=wasm32-unknown-unknown --release
 
 5. Visit `http://localhost:8000` with your browser.
 
@@ -38,7 +38,7 @@ Use z, x, and the arrow keys to play. If you win, you can press Enter to deal an
 
 ### Building for other backends
 
-Replace `--target-webasm` with `--target wasm32-unknown-emscripten` or `--target asmjs-unknown-emscripten`
+Replace `--target=wasm32-unknown-unknown` with `--target=wasm32-unknown-emscripten` or `--target=asmjs-unknown-emscripten`
 if you want to build it using another backend. You will also have to install the
 corresponding targets with `rustup` - `wasm32-unknown-emscripten` and `asmjs-unknown-emscripten`
 respectively.
