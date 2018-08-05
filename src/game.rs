@@ -284,7 +284,7 @@ fn update(state: &mut GameState, input: Input) {
                     1,
                     EQ,
                     JUMP,
-                    49, //END
+                    45, //END
                     GET_DROP_CARD_OR_HALT,
                     GET_GRAB_CARD_SUIT_OR_255,
                     GET_DROP_CARD_SUIT_OR_255,
@@ -299,7 +299,7 @@ fn update(state: &mut GameState, input: Input) {
                     AND,
                     AND,
                     JUMP,
-                    32,                   //END
+                    28,                   //END
                     GET_DROP_CARD_OR_255, //B
                     LITERAL,
                     255,
@@ -308,7 +308,7 @@ fn update(state: &mut GameState, input: Input) {
                     LITERAL,
                     255,
                     JUMP,
-                    23, // END
+                    19, // END
                     GET_GRAB_CARD_SUIT_OR_255,
                     GET_DROP_CARD_SUIT_OR_255,
                     NE,
@@ -322,15 +322,11 @@ fn update(state: &mut GameState, input: Input) {
                     AND,
                     AND,
                     JUMP,
-                    9,            //END
+                    5,            //END
                     GET_CELL_LEN, //A
-                    LITERAL,
-                    0,
-                    EQ,
+                    NOT,
                     GET_GRAB_DEPTH,
-                    LITERAL,
-                    0,
-                    EQ,
+                    NOT,
                     AND,
                     HALT_UNLESS, //END
                     GET_GRAB_POS,
